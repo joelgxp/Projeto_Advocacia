@@ -21,7 +21,7 @@ jobs:
           password: leiviton00
           port: 22
           script: |
-            cd /home/hotel631/public_html
+            cd adv.joelsouza.com.br
             git pull origin main
             composer install --no-dev --optimize-autoloader
             php artisan migrate --force
