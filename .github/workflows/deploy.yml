@@ -22,7 +22,9 @@ jobs:
           port: 22
           script: |
             cd adv.joelsouza.com.br
-            git pull origin main
+            git config --global user.email "deploy@github.com"
+            git config --global user.name "GitHub Actions"
+            git pull https://${{ secrets.GITHUB_TOKEN }}@github.com/joelgxp/Projeto_Advocacia.git main
             composer install --no-dev --optimize-autoloader
             php artisan migrate --force
             php artisan config:cache
