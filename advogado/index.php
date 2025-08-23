@@ -1,13 +1,11 @@
 <?php 
 require_once("../conexao.php");
+require_once("../middleware.php");
+
+// Middleware: só advogados podem acessar
+requireAdvogado();
 
 $email_usuario = @$_SESSION['email_usuario'];
-
-if(@$_SESSION['nivel_usuario'] != 'Advogado'){
-	echo "<script language='javascript'>window.location='../index.php'; </script>";
-
-
-}
 
 
 //VAVIAVEL ITEM QUE VAI DEFINIR A CHAMADA DAS PAGINAS NO MENU

@@ -1,4 +1,9 @@
-<?php $pagina = 'funcionarios'; ?>
+<?php 
+require_once("../middleware.php");
+requireAdmin();
+
+$pagina = 'funcionarios'; 
+?>
 
 
 

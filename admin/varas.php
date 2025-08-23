@@ -1,4 +1,9 @@
-<?php $pagina = 'varas'; ?>
+<?php 
+require_once("../middleware.php");
+requireAdmin();
+
+$pagina = 'varas'; 
+?>
 
 
 

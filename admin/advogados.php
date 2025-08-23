@@ -1,4 +1,9 @@
-<?php $pagina = 'advogados'; ?>
+<?php 
+require_once("../middleware.php");
+requireAdmin();
+
+$pagina = 'advogados'; 
+?>
 
 
 

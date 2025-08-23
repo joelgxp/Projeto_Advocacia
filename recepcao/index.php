@@ -1,12 +1,11 @@
 <?php 
 require_once("../conexao.php");
+require_once("../middleware.php");
+
+// Middleware: só recepção pode acessar
+requireRecepcao();
 
 $email_usuario = @$_SESSION['email_usuario'];
-
-if(@$_SESSION['nivel_usuario'] != 'Recepcionista' and @$_SESSION['nivel_usuario'] != 'Tesoureiro'){
-	echo "<script language='javascript'>window.location='../index.php'; </script>";
-
-}
 
 
 if(@$_SESSION['nivel_usuario'] == 'Recepcionista'){

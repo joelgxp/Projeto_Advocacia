@@ -1,4 +1,9 @@
-<?php $pagina = 'especialidades'; ?>
+<?php 
+require_once("../middleware.php");
+requireAdmin();
+
+$pagina = 'especialidades'; 
+?>
 
 
 

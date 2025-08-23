@@ -1,4 +1,9 @@
-<?php $pagina = 'cargos'; ?>
+<?php 
+require_once("../middleware.php");
+requireAdmin();
+
+$pagina = 'cargos'; 
+?>
 
 
 

@@ -5,8 +5,9 @@ $email_site = "joelvieirasouza@gmail.com";
 
 //BANCO DE DADOS LOCAL
 $host = 'localhost';
+$porta = 3306;
 $usuario = 'root';
-$senha = '';
+$senha = '12345678';
 $banco = 'advocacia';
 
 

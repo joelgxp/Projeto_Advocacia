@@ -1,8 +1,9 @@
 <?php 
 require_once("../conexao.php");
-if(@$_SESSION['nivel_usuario'] != 'admin'){
-	echo "<script language='javascript'>window.location='../index.php'; </script>";
-	}
+require_once("../middleware.php");
+
+// Middleware: só admin pode acessar
+requireAdmin();
 
 
 //VAVIAVEL ITEM QUE VAI DEFINIR A CHAMADA DAS PAGINAS NO MENU

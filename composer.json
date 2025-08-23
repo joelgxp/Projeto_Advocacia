@@ -1,0 +1,43 @@
+{
+    "name": "advocacia/sistema",
+    "description": "Sistema de Gerenciamento para Escritório de Advocacia",
+    "type": "project",
+    "keywords": ["advocacia", "sistema", "gestao", "processos"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Desenvolvedor",
+            "email": "dev@advocacia.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Advocacia\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Advocacia\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "dev": "php -S localhost:8000",
+        "start": "php -S localhost:8000",
+        "post-install-cmd": [
+            "echo 'Instalação concluída com sucesso!'"
+        ]
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
