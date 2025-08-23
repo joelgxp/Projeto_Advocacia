@@ -13,33 +13,27 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v3
 
-      - name: Deploy para HostGator
-        uses: cross-the-world/ssh-scp-ssh-pipelines@v1.1.4
-        with:
-          host: 108.167.132.248
-          port: 22
-          user: hotel631
-          pass: ${{ secrets.SSH_PASSWORD }}
-          connect_timeout: 60
-          last_ssh: |
-            cd ${{ secrets.DEPLOY_PATH }}
-            
-            # Atualizar repositório
-            git pull origin main
-            
-            # Instalar dependências
-            composer install --no-dev --optimize-autoloader
-            
-            # Rodar migrations (se necessário)
-            php artisan migrate --force
-            
-            # Limpar cache
-            php artisan config:clear
-            php artisan cache:clear
-            php artisan route:clear
-            php artisan view:clear
-            
-            # Gerar cache otimizado
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
+                    - name: ssh-scp-ssh-pipelines
+  # You may pin to the exact commit or the version.
+  # uses: cross-the-world/ssh-scp-ssh-pipelines@78e864b4890087a58248ff39320406971ca88b89
+  uses: cross-the-world/ssh-scp-ssh-pipelines@v1.1.4
+  with:
+    # ssh remote host
+    host: 108.167.132.248
+    # ssh remote port
+    port: # optional, default is 22
+    # ssh remote user
+    user: hotel631
+    # content of ssh private key. ex raw content of ~/.ssh/id_rsa
+    key: # optional
+    # ssh remote password
+    pass: ${{ secrets.SSH_PASSWORD }}
+    # connection timeout to remote host
+    connect_timeout: # optional, default is 30s
+    # execute pre-commands before scp
+    first_ssh: # optional
+    # scp from local to remote
+    scp: # optional
+    # execute post-commands after scp
+    last_ssh: # optional
+    
