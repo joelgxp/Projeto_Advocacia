@@ -1,0 +1,45 @@
+name: Deploy Laravel to HostGator
+
+on:
+  push:
+    branches:
+      - main  # ou a branch que você usa para produção
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v3
+
+      - name: Configurar chave SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy para HostGator
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            cd ${{ secrets.DEPLOY_PATH }}
+
+            # Atualizar repositório
+            git pull origin main
+
+            # Instalar dependências
+            composer install --no-dev --optimize-autoloader
+
+            # Rodar migrations (se necessário)
+            php artisan migrate --force
+
+            # Limpar cache
+            php artisan config:clear
+            php artisan cache:clear
+            php artisan route:clear
+            php artisan view:clear
+
+            # Gerar cache otimizado
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+          EOF
