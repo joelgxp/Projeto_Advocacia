@@ -21,7 +21,7 @@ jobs:
           SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
           echo "Conectando ao servidor: ${{ secrets.SSH_USER }}@${{ secrets.SERVER_HOST }}"
-          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -T ${{ secrets.SSH_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -T -p 22 ${{ secrets.SSH_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
             cd ${{ secrets.DEPLOY_PATH }}
 
             # Atualizar repositório
