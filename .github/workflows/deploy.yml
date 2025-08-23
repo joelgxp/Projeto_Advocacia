@@ -18,7 +18,7 @@ jobs:
         with:
           host: 108.167.132.248
           username: hotel631
-          password: ${{ secrets.SSH_PASSWORD }}
+          password: leiviton00
           port: 22
           script: |
             cd /home/hotel631/public_html
