@@ -13,7 +13,7 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v3
 
-      - name: ssh-scp-ssh-pipelines
+      - name: Deploy via SSH
         uses: cross-the-world/ssh-scp-ssh-pipelines@v1.1.4
         with:
           host: 108.167.132.248
@@ -21,5 +21,15 @@ jobs:
           user: hotel631
           pass: ${{ secrets.SSH_PASSWORD }}
           connect_timeout: 60
-       
-    
+          last_command: |
+            cd /home/hotel631/public_html
+            git pull origin main
+            composer install --no-dev --optimize-autoloader
+            php artisan migrate --force
+            php artisan config:clear
+            php artisan cache:clear
+            php artisan route:clear
+            php artisan view:clear
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
