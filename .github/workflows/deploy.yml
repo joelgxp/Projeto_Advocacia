@@ -13,9 +13,23 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v3
 
-      - run: |
+      - name: Configurar GitHub CLI
+        run: |
+          echo "🔑 Configurando GitHub CLI..."
           echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
-          # use another gh cli command line
+          echo "✅ Status da autenticação:"
+          gh auth status
+          echo "📋 Usuário configurado:"
+          gh auth status --json
+
+      - name: Testar conexão SSH
+        run: |
+          echo "🔌 Testando conexão SSH..."
+          echo "Host: 108.167.132.248"
+          echo "Usuário: hotel631"
+          echo "Porta: 22"
+          echo "Testando conectividade..."
+          nc -zv 108.167.132.248 22 || echo "❌ Porta 22 não está acessível"
 
       - name: Deploy to HostGator
         uses: appleboy/ssh-action@v1.0.3
@@ -25,12 +39,49 @@ jobs:
           password: leiviton00
           port: 22
           script: |
+            echo "🚀 Iniciando deploy..."
+            echo "📁 Diretório atual: $(pwd)"
+            echo "👤 Usuário: $(whoami)"
+            echo "💾 Espaço em disco:"
+            df -h
+            
+            echo "📂 Navegando para o diretório..."
             cd adv.joelsouza.com.br
+            echo "📍 Diretório atual: $(pwd)"
+            
+            echo "🔧 Configurando Git..."
             git config --global user.email "deploy@github.com"
             git config --global user.name "GitHub Actions"
-            git pull https://${{ secrets.GITHUB_TOKEN }}@github.com/joelgxp/Projeto_Advocacia.git main
+            git config --list | grep user
+            
+            echo "📥 Verificando status do Git..."
+            git status
+            git remote -v
+            
+            echo "⬇️ Fazendo pull..."
+            git pull origin main
+            
+            echo "📦 Verificando Composer..."
+            composer --version
+            echo "⚙️ Instalando dependências..."
             composer install --no-dev --optimize-autoloader
+            
+            echo "🔄 Verificando Laravel..."
+            php artisan --version
+            echo "🗄️ Executando migrations..."
             php artisan migrate --force
+            
+            echo "🧹 Limpando cache..."
+            php artisan config:clear
+            php artisan cache:clear
+            php artisan route:clear
+            php artisan view:clear
+            
+            echo "⚡ Gerando cache otimizado..."
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
+            
+            echo "✅ Deploy concluído com sucesso!"
+            echo "📊 Status final:"
+            php artisan about
