@@ -51,7 +51,7 @@ if ($pdo === null) {
     <div class="container">
 	<div class="row">
 		<div class="col-md-4 login-sec">
-		    <h2 class="text-center">Faça seu Login</h2>
+		    <h2 class="text-center">Faça seu LoginXXX</h2>
 		    
 		    <?php if (isset($erro_conexao) && $erro_conexao): ?>
 		    <div class="alert alert-warning" role="alert">
