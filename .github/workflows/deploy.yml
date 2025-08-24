@@ -20,7 +20,7 @@ jobs:
           echo "✅ Status da autenticação:"
           gh auth status
           echo "📋 Usuário configurado:"
-          gh auth status --json
+          gh auth status --show-token
 
       - name: Testar conexão SSH
         run: |
