@@ -46,8 +46,19 @@ jobs:
             df -h
             
             echo "📂 Navegando para o diretório..."
+            echo "📍 Diretório antes: $(pwd)"
             cd adv.joelsouza.com.br
-            echo "📍 Diretório atual: $(pwd)"
+            echo "📍 Diretório depois: $(pwd)"
+            echo "📋 Conteúdo do diretório:"
+            ls -la
+            echo "🔍 Verificando se é o diretório correto:"
+            if [ -f "index.php" ]; then
+              echo "✅ index.php encontrado - Diretório correto!"
+            else
+              echo "❌ index.php NÃO encontrado - Diretório incorreto!"
+              echo "📁 Listando diretórios disponíveis:"
+              ls -la ../
+            fi
             
             echo "🔧 Configurando Git..."
             git config --global user.email "deploy@github.com"
