@@ -10,6 +10,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout código
+        uses: actions/checkout@v3
+
       - run: |
           echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
           # use another gh cli command line
+
+      - name: Deploy to HostGator
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 108.167.132.248
+          username: hotel631
+          password: leiviton00
+          port: 22
+          script: |
+            cd adv.joelsouza.com.br
+            git config --global user.email "deploy@github.com"
+            git config --global user.name "GitHub Actions"
+            git pull https://${{ secrets.GITHUB_TOKEN }}@github.com/joelgxp/Projeto_Advocacia.git main
+            composer install --no-dev --optimize-autoloader
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
