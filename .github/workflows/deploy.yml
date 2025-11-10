@@ -22,4 +22,4 @@ jobs:
       - name: Git pull on server
         run: |
           sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "cd ${{ secrets.SSH_DIRECTORY }} && git stash && git clean -fd && git pull origin main && echo 'Deploy concluído com sucesso!' && ls -la"
+            "cd ${{ secrets.SSH_DIRECTORY }} && git stash && git clean -fd && git reset --hard origin/main && git pull origin main && echo 'Deploy concluído com sucesso!' && ls -la"
