@@ -23,17 +23,11 @@ jobs:
         run: |
           sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
             "cd ${{ secrets.SSH_DIRECTORY }} && \
-            if [ -d Projeto_Advocacia ]; then \
-              cd Projeto_Advocacia; \
-            fi && \
             if [ ! -d .git ]; then \
-              echo 'Erro: Diretório não é um repositório Git.'; \
+              echo 'Erro: Diretório não é um repositório Git. Verifique o caminho em SSH_DIRECTORY.'; \
               echo 'Diretório atual:' && pwd && ls -la; \
-              echo 'Tentando encontrar repositório Git...' && \
-              find . -name '.git' -type d 2>/dev/null | head -1; \
               exit 1; \
             fi && \
-            echo 'Repositório Git encontrado em:' && pwd && \
             git fetch origin && \
             git merge --abort 2>/dev/null || true && \
             git reset --hard HEAD && \
