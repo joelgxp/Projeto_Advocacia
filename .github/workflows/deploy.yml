@@ -19,32 +19,6 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Inicializar Git no servidor (se necessário)
-        run: |
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'ENDSSH'
-            cd ${{ secrets.SSH_DIRECTORY }}
-            if [ ! -d ".git" ]; then
-              echo "🔄 Inicializando Git no diretório..."
-              git init
-              git branch -m main 2>/dev/null || true
-              git remote add origin https://github.com/${{ github.repository }}.git || git remote set-url origin https://github.com/${{ github.repository }}.git
-              git fetch origin main
-              # Se não há commits locais, fazer checkout direto
-              if ! git rev-parse --verify HEAD >/dev/null 2>&1; then
-                echo "📥 Repositório vazio, fazendo checkout direto..."
-                git checkout -b main origin/main
-              else
-                echo "🔄 Sincronizando com remoto..."
-                git reset --hard origin/main
-              fi
-              echo "✅ Git inicializado com sucesso!"
-            else
-              echo "✅ Git já está inicializado"
-              # Garantir que o remote está configurado
-              git remote add origin https://github.com/${{ github.repository }}.git 2>/dev/null || git remote set-url origin https://github.com/${{ github.repository }}.git
-            fi
-          ENDSSH
-
       - name: Git pull on server
         run: |
           sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
