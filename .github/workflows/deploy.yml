@@ -1,4 +1,4 @@
-name: Deploy PHP to HostGator
+name: Deploy via SSH
 
 on:
   push:
@@ -6,126 +6,20 @@ on:
       - main
 
 jobs:
-  deploy:
+  ssh-deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout código
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Definir porta SSH
-        id: ssh_port
+      - name: Setup SSH with password
         run: |
-          if [ -z "${{ secrets.SSH_PORT }}" ]; then
-            echo "port=2222" >> $GITHUB_OUTPUT
-          else
-            echo "port=${{ secrets.SSH_PORT }}" >> $GITHUB_OUTPUT
-          fi
+          sudo apt-get update
+          sudo apt-get install -y sshpass
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Deploy to HostGator
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          key: ${{ secrets.SSH_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          port: ${{ steps.ssh_port.outputs.port }}
-          script_stop: true
-          debug: false
-          command_timeout: 10m
-          timeout: 60s
-          script: |
-            echo "🚀 Iniciando deploy..."
-            echo "📁 Diretório atual: $(pwd)"
-            echo "👤 Usuário: $(whoami)"
-            echo "💾 Espaço em disco:"
-            df -h
-            
-            echo "📂 Navegando para o diretório do projeto..."
-            echo "📍 Diretório antes: $(pwd)"
-            
-            # Definir diretório do projeto (usar secret ou padrão)
-            if [ -n "${{ secrets.SSH_DIRECTORY }}" ]; then
-              PROJECT_DIR="${{ secrets.SSH_DIRECTORY }}"
-            else
-              PROJECT_DIR="adv.joelsouza.com.br"
-            fi
-            cd $PROJECT_DIR || {
-              echo "❌ Erro: Não foi possível acessar o diretório $PROJECT_DIR"
-              echo "📁 Listando diretórios disponíveis:"
-              ls -la ../
-              exit 1
-            }
-            
-            echo "📍 Diretório depois: $(pwd)"
-            echo "📋 Conteúdo do diretório:"
-            ls -la
-            
-            echo "🔍 Verificando se é o diretório correto:"
-            if [ -f "index.php" ] || [ -f "composer.json" ]; then
-              echo "✅ Diretório do projeto encontrado!"
-            else
-              echo "⚠️ Arquivos do projeto não encontrados, mas continuando..."
-            fi
-            
-            echo "🔧 Configurando Git..."
-            git config --global user.email "deploy@github.com"
-            git config --global user.name "GitHub Actions"
-            
-            echo "📥 Verificando status do Git..."
-            git status || echo "⚠️ Git não está inicializado neste diretório"
-            git remote -v || echo "⚠️ Remote não configurado"
-            
-            echo "⬇️ Fazendo pull do repositório..."
-            git pull origin main || {
-              echo "⚠️ Erro ao fazer pull. Tentando fetch e merge..."
-              git fetch origin main
-              git merge origin/main || echo "⚠️ Conflitos ou erros no merge"
-            }
-            
-            echo "📦 Verificando PHP..."
-            php -v
-            
-            echo "📦 Verificando Composer..."
-            if command -v composer &> /dev/null; then
-              composer --version
-              echo "⚙️ Instalando dependências do Composer..."
-              composer install --no-dev --optimize-autoloader --no-interaction || {
-                echo "⚠️ Erro ao instalar dependências do Composer"
-                echo "Tentando com composer.phar local..."
-                if [ -f "composer.phar" ]; then
-                  php composer.phar install --no-dev --optimize-autoloader --no-interaction
-                else
-                  echo "⚠️ Composer não encontrado. Instalando localmente..."
-                  php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-                  php composer-setup.php --install-dir=. --filename=composer.phar
-                  php composer.phar install --no-dev --optimize-autoloader --no-interaction
-                  php -r "unlink('composer-setup.php');" 2>/dev/null || true
-                fi
-              }
-            else
-              echo "⚠️ Composer não encontrado globalmente. Instalando localmente..."
-              php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-              php composer-setup.php --install-dir=. --filename=composer.phar
-              php composer.phar install --no-dev --optimize-autoloader --no-interaction
-              php -r "unlink('composer-setup.php');" 2>/dev/null || true
-            fi
-            
-            echo "✅ Verificando instalação do Composer..."
-            if [ -f "vendor/autoload.php" ]; then
-              echo "✅ vendor/autoload.php criado com sucesso!"
-            else
-              echo "⚠️ vendor/autoload.php não foi criado"
-            fi
-            
-            echo "🔐 Verificando permissões de arquivos..."
-            chmod -R 755 . 2>/dev/null || echo "⚠️ Não foi possível alterar todas as permissões"
-            chmod -R 755 vendor/ 2>/dev/null || echo "⚠️ Diretório vendor não existe ainda"
-            
-            echo "✅ Deploy concluído com sucesso!"
-            echo "📊 Status final:"
-            echo "   - PHP: $(php -v | head -n 1)"
-            echo "   - Composer: $(composer --version 2>/dev/null || php composer.phar --version 2>/dev/null || echo 'Não instalado')"
-            echo "   - Diretório: $(pwd)"
-            echo "   - Branch: $(git branch --show-current 2>/dev/null || echo 'N/A')"
+      - name: Git pull on server
+        run: |
+          sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "cd joelsouza && git stash && git pull origin main && echo 'Deploy concluído com sucesso!' && ls -la"
