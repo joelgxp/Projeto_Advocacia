@@ -1,4 +1,4 @@
-name: Deploy via SSH
+name: Build and Deploy via SSH
 
 on:
   push:
@@ -6,7 +6,67 @@ on:
       - main
 
 jobs:
-  ssh-deploy:
+  build-and-commit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+    
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+    
+      - name: Install NPM dependencies
+        run: npm ci
+    
+      - name: Build assets
+        run: npm run build
+    
+      - name: Verify build output
+        run: |
+          if [ -d "public/build" ]; then
+            echo "✅ Build concluído com sucesso"
+            ls -la public/build/
+          else
+            echo "❌ Erro: public/build não foi criado"
+            exit 1
+          fi
+    
+      - name: Configure Git
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+    
+      - name: Check for changes in compiled assets
+        id: check-changes
+        run: |
+          if [ -n "$(git status --porcelain public/build/ 2>/dev/null)" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "Alterações detectadas em public/build/"
+            git status --short public/build/
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "Nenhuma alteração em public/build/"
+          fi
+    
+      - name: Commit compiled assets
+        if: steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          git add public/build/
+          git commit -m "chore: atualizar assets compilados [skip ci]" || exit 0
+          git push origin HEAD:main || exit 0
+          echo "✓ Arquivos compilados commitados e enviados para o repositório"
+
+  deploy:
+    needs: build-and-commit
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -17,22 +77,24 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y sshpass
           mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
           ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
 
       - name: Git pull on server
         run: |
           sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
             "cd ${{ secrets.SSH_DIRECTORY }} && \
             if [ ! -d .git ]; then \
-              echo 'Erro: Diretório não é um repositório Git. Verifique o caminho em SSH_DIRECTORY.'; \
+              echo '❌ Erro: Diretório não é um repositório Git. Verifique o caminho em SSH_DIRECTORY.'; \
               echo 'Diretório atual:' && pwd && ls -la; \
               exit 1; \
             fi && \
+            echo '📥 Fazendo git fetch...' && \
             git fetch origin && \
-            git merge --abort 2>/dev/null || true && \
-            git reset --hard HEAD && \
-            git clean -fd && \
-            git reset --hard origin/main && \
+            echo '🔄 Fazendo git pull...' && \
             git pull origin main && \
-            echo 'Deploy concluído com sucesso!' && \
-            ls -la"
+            echo '✅ Deploy concluído com sucesso!' && \
+            echo '' && \
+            echo '📦 Arquivos atualizados:' && \
+            ls -la public/build/ 2>/dev/null || echo '⚠️ public/build não encontrado'"
