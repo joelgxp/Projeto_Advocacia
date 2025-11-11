@@ -30,6 +30,21 @@ jobs:
         php-version: '8.2'
         extensions: mbstring, pdo_mysql, openssl, tokenizer, xml, ctype, json, fileinfo
     
+    - name: Create required directories
+      run: |
+        # Criar diretórios necessários para o Laravel
+        mkdir -p bootstrap/cache
+        mkdir -p storage/framework/cache/data
+        mkdir -p storage/framework/sessions
+        mkdir -p storage/framework/views
+        mkdir -p storage/logs
+        # Garantir permissões de escrita (775 para diretórios, 664 para arquivos)
+        chmod -R 775 bootstrap/cache
+        chmod -R 775 storage
+        # Garantir que o diretório cache/data existe e é gravável
+        touch bootstrap/cache/.gitkeep 2>/dev/null || true
+        touch storage/framework/cache/data/.gitkeep 2>/dev/null || true
+    
     - name: Install Composer dependencies
       run: composer install --no-dev --optimize-autoloader --no-interaction
     
