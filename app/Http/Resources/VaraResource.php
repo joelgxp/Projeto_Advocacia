@@ -22,3 +22,4 @@ class VaraResource extends JsonResource
     }
 }
 
+

@@ -60,3 +60,4 @@ class CargoController extends Controller
     }
 }
 
+

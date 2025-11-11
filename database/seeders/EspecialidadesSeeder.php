@@ -29,3 +29,4 @@ class EspecialidadesSeeder extends Seeder
     }
 }
 
+

@@ -32,3 +32,4 @@ class Vara extends Model
     }
 }
 
+

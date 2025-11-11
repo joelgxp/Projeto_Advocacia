@@ -37,3 +37,4 @@ class Especialidade extends Model
     }
 }
 
+

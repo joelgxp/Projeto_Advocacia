@@ -28,3 +28,4 @@ class CargosSeeder extends Seeder
     }
 }
 
+

@@ -66,3 +66,4 @@ class VaraController extends Controller
     }
 }
 
+

@@ -27,3 +27,4 @@ class VarasSeeder extends Seeder
     }
 }
 
+

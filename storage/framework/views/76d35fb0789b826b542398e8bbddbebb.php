@@ -48,4 +48,5 @@
 </body>
 </html>
 
+
 <?php /**PATH C:\Users\joelv\OneDrive\Documentos\Repositorios\Projeto_Advocacia\resources\views/layouts/app.blade.php ENDPATH**/ ?>
