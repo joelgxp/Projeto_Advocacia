@@ -1,77 +1,38 @@
-name: Build and Deploy
+name: Deploy via SSH
 
 on:
   push:
-    branches: [ main, production ]
-  workflow_dispatch:
+    branches:
+      - main
 
 jobs:
-  build:
+  ssh-deploy:
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-    
-    - name: Install NPM dependencies
-      run: npm ci
-    
-    - name: Build assets
-      run: npm run build
-    
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.2'
-        extensions: mbstring, pdo_mysql, openssl, tokenizer, xml, ctype, json, fileinfo
-    
-    - name: Prepare Laravel directories
-      run: |
-        # Criar todos os diretórios necessários para o Laravel funcionar
-        # O Laravel precisa do bootstrap/cache para executar package:discover durante composer install
-        mkdir -p bootstrap/cache
-        mkdir -p storage/framework/cache/data
-        mkdir -p storage/framework/sessions
-        mkdir -p storage/framework/views
-        mkdir -p storage/logs
-        
-        # Garantir que os diretórios e arquivos são graváveis
-        # No GitHub Actions, garantir permissões explícitas resolve problemas comuns
-        chmod -R 775 bootstrap/cache 2>/dev/null || true
-        chmod -R 775 storage 2>/dev/null || true
-        
-        # Verificar se o diretório bootstrap/cache é gravável
-        if [ -w "bootstrap/cache" ]; then
-          echo "✓ bootstrap/cache é gravável"
-        else
-          echo "⚠ Aviso: bootstrap/cache pode não ser gravável, tentando corrigir..."
-          chmod 777 bootstrap/cache
-        fi
-        
-        # Listar conteúdo para debug (se necessário)
-        echo "Conteúdo de bootstrap/cache:"
-        ls -la bootstrap/cache/ || echo "Diretório vazio ou não acessível"
-    
-    - name: Install Composer dependencies
-      run: composer install --no-dev --optimize-autoloader --no-interaction
-    
-    - name: Create deployment package
-      run: |
-        mkdir -p deploy-package
-        # Copiar arquivos necessários (excluindo node_modules, etc)
-        rsync -av --exclude='node_modules' --exclude='.git' --exclude='.github' \
-          --exclude='tests' --exclude='.env' --exclude='storage/logs/*' \
-          . deploy-package/
-    
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: deployment-package
-        path: deploy-package/
-        retention-days: 7
-        if-no-files-found: warn
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH with password
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Git pull on server
+        run: |
+          sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "cd ${{ secrets.SSH_DIRECTORY }} && \
+            if [ ! -d .git ]; then \
+              echo 'Erro: Diretório não é um repositório Git. Verifique o caminho em SSH_DIRECTORY.'; \
+              echo 'Diretório atual:' && pwd && ls -la; \
+              exit 1; \
+            fi && \
+            git fetch origin && \
+            git merge --abort 2>/dev/null || true && \
+            git reset --hard HEAD && \
+            git clean -fd && \
+            git reset --hard origin/main && \
+            git pull origin main && \
+            echo 'Deploy concluído com sucesso!' && \
+            ls -la"
