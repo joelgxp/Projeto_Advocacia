@@ -30,20 +30,32 @@ jobs:
         php-version: '8.2'
         extensions: mbstring, pdo_mysql, openssl, tokenizer, xml, ctype, json, fileinfo
     
-    - name: Create required directories
+    - name: Prepare Laravel directories
       run: |
-        # Criar diretórios necessários para o Laravel
+        # Criar todos os diretórios necessários para o Laravel funcionar
+        # O Laravel precisa do bootstrap/cache para executar package:discover durante composer install
         mkdir -p bootstrap/cache
         mkdir -p storage/framework/cache/data
         mkdir -p storage/framework/sessions
         mkdir -p storage/framework/views
         mkdir -p storage/logs
-        # Garantir permissões de escrita (775 para diretórios, 664 para arquivos)
-        chmod -R 775 bootstrap/cache
-        chmod -R 775 storage
-        # Garantir que o diretório cache/data existe e é gravável
-        touch bootstrap/cache/.gitkeep 2>/dev/null || true
-        touch storage/framework/cache/data/.gitkeep 2>/dev/null || true
+        
+        # Garantir que os diretórios e arquivos são graváveis
+        # No GitHub Actions, garantir permissões explícitas resolve problemas comuns
+        chmod -R 775 bootstrap/cache 2>/dev/null || true
+        chmod -R 775 storage 2>/dev/null || true
+        
+        # Verificar se o diretório bootstrap/cache é gravável
+        if [ -w "bootstrap/cache" ]; then
+          echo "✓ bootstrap/cache é gravável"
+        else
+          echo "⚠ Aviso: bootstrap/cache pode não ser gravável, tentando corrigir..."
+          chmod 777 bootstrap/cache
+        fi
+        
+        # Listar conteúdo para debug (se necessário)
+        echo "Conteúdo de bootstrap/cache:"
+        ls -la bootstrap/cache/ || echo "Diretório vazio ou não acessível"
     
     - name: Install Composer dependencies
       run: composer install --no-dev --optimize-autoloader --no-interaction
