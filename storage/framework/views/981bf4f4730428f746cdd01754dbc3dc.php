@@ -1,53 +1,56 @@
-@extends('layouts.app')
 
-@section('title', 'Detalhes do Processo - Administrador')
 
-@section('page-title', 'Detalhes do Processo')
+<?php $__env->startSection('title', 'Detalhes do Processo - Administrador'); ?>
 
-@section('content')
+<?php $__env->startSection('page-title', 'Detalhes do Processo'); ?>
+
+<?php $__env->startSection('content'); ?>
 <div class="row">
     <div class="col-12">
         <!-- Cabeçalho -->
         <div class="card mb-3">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
-                    <i class="fas fa-file-alt me-2"></i>Processo: {{ $numero }}
+                    <i class="fas fa-file-alt me-2"></i>Processo: <?php echo e($numero); ?>
+
                 </h5>
                 <div>
-                    <a href="{{ route('admin.consulta-processual.index') }}" class="btn btn-sm btn-secondary">
+                    <a href="<?php echo e(route('admin.consulta-processual.index')); ?>" class="btn btn-sm btn-secondary">
                         <i class="fas fa-arrow-left me-1"></i> Voltar
                     </a>
-                    @if($processo)
-                        <a href="{{ route('admin.processos.show', $processo->id) }}" class="btn btn-sm btn-primary">
+                    <?php if($processo): ?>
+                        <a href="<?php echo e(route('admin.processos.show', $processo->id)); ?>" class="btn btn-sm btn-primary">
                             <i class="fas fa-eye me-1"></i> Ver no Sistema
                         </a>
-                    @else
-                        <a href="{{ route('admin.processos.create', ['numero_processo' => $numero]) }}" class="btn btn-sm btn-success">
+                    <?php else: ?>
+                        <a href="<?php echo e(route('admin.processos.create', ['numero_processo' => $numero])); ?>" class="btn btn-sm btn-success">
                             <i class="fas fa-plus me-1"></i> Cadastrar no Sistema
                         </a>
-                    @endif
-                    <a href="{{ route('admin.consulta-processual.historico', $numero) }}" class="btn btn-sm btn-info">
+                    <?php endif; ?>
+                    <a href="<?php echo e(route('admin.consulta-processual.historico', $numero)); ?>" class="btn btn-sm btn-info">
                         <i class="fas fa-history me-1"></i> Histórico
                     </a>
                 </div>
             </div>
         </div>
 
-        @if(session('error'))
+        <?php if(session('error')): ?>
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
+                <i class="fas fa-exclamation-circle me-2"></i><?php echo e(session('error')); ?>
+
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-        @endif
+        <?php endif; ?>
 
-        @if(session('success'))
+        <?php if(session('success')): ?>
             <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+                <i class="fas fa-check-circle me-2"></i><?php echo e(session('success')); ?>
+
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-        @endif
+        <?php endif; ?>
 
-        @php
+        <?php
             // Estrutura de dados da API DataJud (Elasticsearch)
             $hits = $dados['hits']['hits'] ?? [];
             $processoData = !empty($hits) ? $hits[0]['_source'] ?? [] : [];
@@ -90,14 +93,14 @@
                     return strcmp($dataB, $dataA);
                 });
             }
-        @endphp
+        ?>
 
-        @if(empty($processoData))
+        <?php if(empty($processoData)): ?>
             <div class="alert alert-warning">
                 <i class="fas fa-exclamation-triangle me-2"></i>
                 <strong>Atenção:</strong> Nenhum dado encontrado para este processo na API.
             </div>
-        @else
+        <?php else: ?>
             <!-- Informações Básicas -->
             <div class="card mb-3">
                 <div class="card-header">
@@ -109,68 +112,74 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <strong>Número do Processo:</strong><br>
-                            <span class="text-primary">{{ $numeroProcesso }}</span>
+                            <span class="text-primary"><?php echo e($numeroProcesso); ?></span>
                         </div>
                         <div class="col-md-6 mb-3">
                             <strong>Classe:</strong><br>
-                            {{ $classe }}
+                            <?php echo e($classe); ?>
+
                         </div>
                         <div class="col-md-6 mb-3">
                             <strong>Assunto(s):</strong><br>
-                            @if(!empty($assuntos))
-                                @foreach($assuntos as $item)
-                                    {{ $item['nome'] ?? '' }}@if(isset($item['codigo'])) ({{ $item['codigo'] }})@endif{{ !$loop->last ? ', ' : '' }}
-                                @endforeach
-                            @else
+                            <?php if(!empty($assuntos)): ?>
+                                <?php $__currentLoopData = $assuntos; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <?php echo e($item['nome'] ?? ''); ?><?php if(isset($item['codigo'])): ?> (<?php echo e($item['codigo']); ?>)<?php endif; ?><?php echo e(!$loop->last ? ', ' : ''); ?>
+
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            <?php else: ?>
                                 Não informado
-                            @endif
+                            <?php endif; ?>
                         </div>
                         <div class="col-md-6 mb-3">
                             <strong>Sistema:</strong><br>
-                            {{ $sistema }}@if($sistemaCodigo) ({{ $sistemaCodigo }})@endif
+                            <?php echo e($sistema); ?><?php if($sistemaCodigo): ?> (<?php echo e($sistemaCodigo); ?>)<?php endif; ?>
                         </div>
                         <div class="col-md-6 mb-3">
                             <strong>Formato:</strong><br>
-                            {{ $formato }}@if($formatoCodigo) ({{ $formatoCodigo }})@endif
+                            <?php echo e($formato); ?><?php if($formatoCodigo): ?> (<?php echo e($formatoCodigo); ?>)<?php endif; ?>
                         </div>
-                        @if($grau)
+                        <?php if($grau): ?>
                         <div class="col-md-6 mb-3">
                             <strong>Grau:</strong><br>
-                            {{ $grau }}
+                            <?php echo e($grau); ?>
+
                         </div>
-                        @endif
-                        @if($classeCodigo)
+                        <?php endif; ?>
+                        <?php if($classeCodigo): ?>
                         <div class="col-md-6 mb-3">
                             <strong>Código da Classe:</strong><br>
-                            {{ $classeCodigo }}
+                            <?php echo e($classeCodigo); ?>
+
                         </div>
-                        @endif
-                        @if($dataAjuizamento)
+                        <?php endif; ?>
+                        <?php if($dataAjuizamento): ?>
                         <div class="col-md-6 mb-3">
                             <strong>Data de Ajuizamento:</strong><br>
-                            @php
+                            <?php
                                 // Formato: YYYYMMDDHHMMSS
                                 $ano = substr($dataAjuizamento, 0, 4);
                                 $mes = substr($dataAjuizamento, 4, 2);
                                 $dia = substr($dataAjuizamento, 6, 2);
                                 $dataFormatada = $dia . '/' . $mes . '/' . $ano;
-                            @endphp
-                            {{ $dataFormatada }}
+                            ?>
+                            <?php echo e($dataFormatada); ?>
+
                         </div>
-                        @endif
-                        @if($dataHoraUltimaAtualizacao)
+                        <?php endif; ?>
+                        <?php if($dataHoraUltimaAtualizacao): ?>
                         <div class="col-md-6 mb-3">
                             <strong>Última Atualização:</strong><br>
-                            {{ \Carbon\Carbon::parse($dataHoraUltimaAtualizacao)->format('d/m/Y H:i') }}
+                            <?php echo e(\Carbon\Carbon::parse($dataHoraUltimaAtualizacao)->format('d/m/Y H:i')); ?>
+
                         </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
 
             <!-- Órgão Julgador e Tribunal -->
             <div class="row mb-3">
-                @if(!empty($orgaoJulgador))
+                <?php if(!empty($orgaoJulgador)): ?>
                 <div class="col-md-6">
                     <div class="card">
                         <div class="card-header">
@@ -179,14 +188,14 @@
                             </h6>
                         </div>
                         <div class="card-body">
-                            <strong>Nome:</strong> {{ $orgaoJulgador['nome'] ?? 'Não informado' }}<br>
-                            @if(isset($orgaoJulgador['codigo']))
-                            <strong>Código:</strong> {{ $orgaoJulgador['codigo'] }}<br>
-                            @endif
+                            <strong>Nome:</strong> <?php echo e($orgaoJulgador['nome'] ?? 'Não informado'); ?><br>
+                            <?php if(isset($orgaoJulgador['codigo'])): ?>
+                            <strong>Código:</strong> <?php echo e($orgaoJulgador['codigo']); ?><br>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
-                @endif
+                <?php endif; ?>
                 
                 <div class="col-md-6">
                     <div class="card">
@@ -196,17 +205,17 @@
                             </h6>
                         </div>
                         <div class="card-body">
-                            <strong>Nome:</strong> {{ $tribunalNome }}<br>
-                            @if(isset($partes['tribunal']))
-                            <strong>Código TR:</strong> {{ $partes['tribunal'] }}<br>
-                            @endif
+                            <strong>Nome:</strong> <?php echo e($tribunalNome); ?><br>
+                            <?php if(isset($partes['tribunal'])): ?>
+                            <strong>Código TR:</strong> <?php echo e($partes['tribunal']); ?><br>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Partes Envolvidas -->
-            @if(!empty($partesEnvolvidas))
+            <?php if(!empty($partesEnvolvidas)): ?>
             <div class="card mb-3">
                 <div class="card-header">
                     <h6 class="mb-0">
@@ -215,66 +224,66 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        @if($poloAtivo)
+                        <?php if($poloAtivo): ?>
                         <div class="col-md-6 mb-3">
                             <h6 class="text-success">
                                 <i class="fas fa-user-check me-1"></i>Polo Ativo
                             </h6>
-                            @if(isset($poloAtivo['pessoas']))
-                                @foreach($poloAtivo['pessoas'] as $pessoa)
+                            <?php if(isset($poloAtivo['pessoas'])): ?>
+                                <?php $__currentLoopData = $poloAtivo['pessoas']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $pessoa): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <div class="mb-2">
-                                        <strong>{{ $pessoa['nome'] ?? 'Não informado' }}</strong><br>
-                                        @if(isset($pessoa['tipo']))
-                                        <small class="text-muted">Tipo: {{ $pessoa['tipo'] }}</small><br>
-                                        @endif
-                                        @if(isset($pessoa['documento']))
-                                        <small class="text-muted">Documento: {{ $pessoa['documento'] }}</small>
-                                        @endif
+                                        <strong><?php echo e($pessoa['nome'] ?? 'Não informado'); ?></strong><br>
+                                        <?php if(isset($pessoa['tipo'])): ?>
+                                        <small class="text-muted">Tipo: <?php echo e($pessoa['tipo']); ?></small><br>
+                                        <?php endif; ?>
+                                        <?php if(isset($pessoa['documento'])): ?>
+                                        <small class="text-muted">Documento: <?php echo e($pessoa['documento']); ?></small>
+                                        <?php endif; ?>
                                     </div>
-                                @endforeach
-                            @endif
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            <?php endif; ?>
                         </div>
-                        @endif
+                        <?php endif; ?>
 
-                        @if($poloPassivo)
+                        <?php if($poloPassivo): ?>
                         <div class="col-md-6 mb-3">
                             <h6 class="text-danger">
                                 <i class="fas fa-user-times me-1"></i>Polo Passivo
                             </h6>
-                            @if(isset($poloPassivo['pessoas']))
-                                @foreach($poloPassivo['pessoas'] as $pessoa)
+                            <?php if(isset($poloPassivo['pessoas'])): ?>
+                                <?php $__currentLoopData = $poloPassivo['pessoas']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $pessoa): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <div class="mb-2">
-                                        <strong>{{ $pessoa['nome'] ?? 'Não informado' }}</strong><br>
-                                        @if(isset($pessoa['tipo']))
-                                        <small class="text-muted">Tipo: {{ $pessoa['tipo'] }}</small><br>
-                                        @endif
-                                        @if(isset($pessoa['documento']))
-                                        <small class="text-muted">Documento: {{ $pessoa['documento'] }}</small>
-                                        @endif
+                                        <strong><?php echo e($pessoa['nome'] ?? 'Não informado'); ?></strong><br>
+                                        <?php if(isset($pessoa['tipo'])): ?>
+                                        <small class="text-muted">Tipo: <?php echo e($pessoa['tipo']); ?></small><br>
+                                        <?php endif; ?>
+                                        <?php if(isset($pessoa['documento'])): ?>
+                                        <small class="text-muted">Documento: <?php echo e($pessoa['documento']); ?></small>
+                                        <?php endif; ?>
                                     </div>
-                                @endforeach
-                            @endif
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            <?php endif; ?>
                         </div>
-                        @endif
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
-            @endif
+            <?php endif; ?>
 
             <!-- Últimas Movimentações -->
-            @if(!empty($movimentacoes))
+            <?php if(!empty($movimentacoes)): ?>
             <div class="card mb-3">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h6 class="mb-0">
                         <i class="fas fa-history me-2"></i>Últimas Movimentações
                     </h6>
-                    <a href="{{ route('admin.consulta-processual.historico', $numero) }}" class="btn btn-sm btn-outline-primary">
+                    <a href="<?php echo e(route('admin.consulta-processual.historico', $numero)); ?>" class="btn btn-sm btn-outline-primary">
                         Ver Todas
                     </a>
                 </div>
                 <div class="card-body">
                     <div class="timeline">
-                        @foreach(array_slice($movimentacoes, 0, 5) as $movimento)
+                        <?php $__currentLoopData = array_slice($movimentacoes, 0, 5); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $movimento): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <div class="timeline-item mb-3">
                                 <div class="d-flex">
                                     <div class="timeline-marker me-3">
@@ -282,34 +291,37 @@
                                     </div>
                                     <div class="flex-grow-1">
                                         <h6 class="mb-1">
-                                            {{ $movimento['nome'] ?? 'Movimentação' }}
-                                            @if(isset($movimento['codigo']))
-                                            <small class="text-muted">({{ $movimento['codigo'] }})</small>
-                                            @endif
+                                            <?php echo e($movimento['nome'] ?? 'Movimentação'); ?>
+
+                                            <?php if(isset($movimento['codigo'])): ?>
+                                            <small class="text-muted">(<?php echo e($movimento['codigo']); ?>)</small>
+                                            <?php endif; ?>
                                         </h6>
-                                        @if(isset($movimento['dataHora']))
+                                        <?php if(isset($movimento['dataHora'])): ?>
                                         <small class="text-muted">
                                             <i class="fas fa-calendar me-1"></i>
-                                            {{ \Carbon\Carbon::parse($movimento['dataHora'])->format('d/m/Y H:i') }}
+                                            <?php echo e(\Carbon\Carbon::parse($movimento['dataHora'])->format('d/m/Y H:i')); ?>
+
                                         </small>
-                                        @endif
-                                        @if(isset($movimento['complementosTabelados']) && !empty($movimento['complementosTabelados']))
+                                        <?php endif; ?>
+                                        <?php if(isset($movimento['complementosTabelados']) && !empty($movimento['complementosTabelados'])): ?>
                                         <div class="mt-2">
-                                            @foreach($movimento['complementosTabelados'] as $complemento)
+                                            <?php $__currentLoopData = $movimento['complementosTabelados']; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $complemento): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                                 <span class="badge bg-secondary me-1">
-                                                    {{ $complemento['nome'] ?? '' }}
+                                                    <?php echo e($complemento['nome'] ?? ''); ?>
+
                                                 </span>
-                                            @endforeach
+                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                         </div>
-                                        @endif
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </div>
                 </div>
             </div>
-            @endif
+            <?php endif; ?>
 
             <!-- Informações Técnicas -->
             <div class="card mb-3">
@@ -321,26 +333,30 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6 mb-2">
-                            <strong>Segmento:</strong> {{ $partes['segmento'] ?? 'N/A' }} - 
-                            {{ \App\Helpers\ProcessoCNJHelper::getNomeSegmento($partes['segmento'] ?? '') }}
+                            <strong>Segmento:</strong> <?php echo e($partes['segmento'] ?? 'N/A'); ?> - 
+                            <?php echo e(\App\Helpers\ProcessoCNJHelper::getNomeSegmento($partes['segmento'] ?? '')); ?>
+
                         </div>
                         <div class="col-md-6 mb-2">
-                            <strong>Tribunal (TR):</strong> {{ $partes['tribunal'] ?? 'N/A' }}
+                            <strong>Tribunal (TR):</strong> <?php echo e($partes['tribunal'] ?? 'N/A'); ?>
+
                         </div>
                         <div class="col-md-6 mb-2">
-                            <strong>Número Limpo:</strong> {{ $partes['numero_limpo'] ?? 'N/A' }}
+                            <strong>Número Limpo:</strong> <?php echo e($partes['numero_limpo'] ?? 'N/A'); ?>
+
                         </div>
                         <div class="col-md-6 mb-2">
-                            <strong>Origem:</strong> {{ $partes['origem'] ?? 'N/A' }}
+                            <strong>Origem:</strong> <?php echo e($partes['origem'] ?? 'N/A'); ?>
+
                         </div>
                     </div>
                 </div>
             </div>
 
-        @endif
+        <?php endif; ?>
 
         <!-- Debug - Informações da API -->
-        @if(isset($debug) && $debug)
+        <?php if(isset($debug) && $debug): ?>
         <div class="card border-warning mb-3">
             <div class="card-header bg-warning text-dark">
                 <h6 class="mb-0">
@@ -352,26 +368,32 @@
                     <div class="col-12 mb-3">
                         <strong>URL da API utilizada:</strong><br>
                         <code class="d-block p-2 bg-light border rounded mt-1" style="word-break: break-all; font-size: 0.9em;">
-                            {{ $debug['url'] ?? 'N/A' }}
+                            <?php echo e($debug['url'] ?? 'N/A'); ?>
+
                         </code>
                     </div>
                     <div class="col-md-4 mb-2">
-                        <strong>Segmento (J):</strong> {{ $debug['segmento'] ?? 'N/A' }}
+                        <strong>Segmento (J):</strong> <?php echo e($debug['segmento'] ?? 'N/A'); ?>
+
                     </div>
                     <div class="col-md-4 mb-2">
-                        <strong>Tribunal (TR):</strong> {{ $debug['tribunal'] ?? 'N/A' }}
+                        <strong>Tribunal (TR):</strong> <?php echo e($debug['tribunal'] ?? 'N/A'); ?>
+
                     </div>
                     <div class="col-md-4 mb-2">
-                        <strong>Número Limpo:</strong> {{ $debug['numero_limpo'] ?? 'N/A' }}
+                        <strong>Número Limpo:</strong> <?php echo e($debug['numero_limpo'] ?? 'N/A'); ?>
+
                     </div>
                     <div class="col-md-12 mb-2">
-                        <strong>Número Formatado:</strong> {{ $debug['numero_formatado'] ?? 'N/A' }}
+                        <strong>Número Formatado:</strong> <?php echo e($debug['numero_formatado'] ?? 'N/A'); ?>
+
                     </div>
-                    @if(isset($debug['endpoint_base']))
+                    <?php if(isset($debug['endpoint_base'])): ?>
                     <div class="col-md-12 mb-2">
-                        <strong>Endpoint Base:</strong> {{ $debug['endpoint_base'] ?? 'N/A' }}
+                        <strong>Endpoint Base:</strong> <?php echo e($debug['endpoint_base'] ?? 'N/A'); ?>
+
                     </div>
-                    @endif
+                    <?php endif; ?>
                 </div>
                 <div class="mt-3">
                     <small class="text-muted">
@@ -381,11 +403,11 @@
                 </div>
             </div>
         </div>
-        @endif
+        <?php endif; ?>
     </div>
 </div>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <style>
     .timeline {
         position: relative;
@@ -409,5 +431,7 @@
         background: #dee2e6;
     }
 </style>
-@endpush
-@endsection
+<?php $__env->stopPush(); ?>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\Users\joelv\OneDrive\Documentos\Repositorios\Projeto_Advocacia\resources\views/admin/consulta-processual/detalhes.blade.php ENDPATH**/ ?>

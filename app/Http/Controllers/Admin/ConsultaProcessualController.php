@@ -92,6 +92,7 @@ class ConsultaProcessualController extends Controller
             'dados' => $dados,
             'partes' => $partes,
             'processo' => $processo,
+            'debug' => $resultado['debug'] ?? null,
         ]);
     }
 

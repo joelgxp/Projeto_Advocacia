@@ -68,10 +68,19 @@ class ConsultaProcessualService
             ];
         }
         
+        // Preparar dados de debug (sempre disponível, mesmo com cache)
+        $debugInfo = [
+            'url' => $endpoint,
+            'segmento' => $segmento,
+            'tribunal' => $tribunal,
+            'numero_limpo' => $numeroLimpo,
+            'numero_formatado' => $partes['numero_formatado'],
+        ];
+        
         // Cache de 1 hora para consultas
         $cacheKey = "consulta_processual.{$segmento}.{$tribunal}.{$numeroLimpo}";
         
-        return Cache::remember($cacheKey, 3600, function () use ($numeroLimpo, $endpoint, $partes, $segmento, $tribunal) {
+        $resultado = Cache::remember($cacheKey, 3600, function () use ($numeroLimpo, $endpoint, $partes, $segmento, $tribunal, $debugInfo) {
             try {
                 // A API do DataJud usa formato Elasticsearch: /{endpoint}/_search
                 // Requisição POST com body JSON contendo o número do processo
@@ -100,12 +109,14 @@ class ConsultaProcessualService
                         'tribunal' => $tribunal,
                         'numero' => $numeroLimpo,
                         'numero_formatado' => $partes['numero_formatado'],
+                        'url' => $endpoint,
                     ]);
                     
                     return [
                         'success' => true,
                         'data' => $data,
                         'partes' => $partes,
+                        'debug' => $debugInfo,
                     ];
                 } else {
                     Log::warning('Erro na consulta processual', [
@@ -113,12 +124,14 @@ class ConsultaProcessualService
                         'numero' => $numeroLimpo,
                         'status' => $response->status(),
                         'body' => $response->body(),
+                        'url' => $endpoint,
                     ]);
                     
                     return [
                         'success' => false,
                         'message' => $this->getErrorMessage($response->status()),
                         'status' => $response->status(),
+                        'debug' => $debugInfo,
                     ];
                 }
             } catch (\Exception $e) {
@@ -126,14 +139,23 @@ class ConsultaProcessualService
                     'tribunal' => $tribunal,
                     'numero' => $numeroLimpo,
                     'error' => $e->getMessage(),
+                    'url' => $endpoint,
                 ]);
                 
                 return [
                     'success' => false,
                     'message' => 'Erro ao conectar com a API: ' . $e->getMessage(),
+                    'debug' => $debugInfo,
                 ];
             }
         });
+        
+        // Sempre adicionar informações de debug ao resultado (mesmo se vier do cache)
+        if (is_array($resultado) && isset($resultado['success'])) {
+            $resultado['debug'] = $debugInfo;
+        }
+        
+        return $resultado;
     }
 
     /**
@@ -243,41 +265,56 @@ class ConsultaProcessualService
 
     /**
      * Lista de tribunais disponíveis organizados por segmento
+     * Conforme tabela oficial do CNJ - Valor "J" (Segmento/O órgão do Judiciário)
+     * 
+     * 1 - Supremo Tribunal Federal (STF)
+     * 2 - Conselho Nacional de Justiça (CNJ)
+     * 3 - Superior Tribunal de Justiça (STJ)
+     * 4 - Justiça Federal
+     * 5 - Justiça do Trabalho
+     * 6 - Justiça Eleitoral
+     * 7 - Justiça Militar da União
+     * 8 - Justiça dos Estados e do Distrito Federal e Territórios
+     * 9 - Justiça Militar Estadual
      */
     public function getTribunais(): array
     {
         return [
             '1' => [
-                'nome' => 'Justiça Federal / Militar',
-                'tribunais' => array_merge($this->getTribunaisFederais(), $this->getTribunaisMilitares()),
+                'nome' => 'Supremo Tribunal Federal (STF)',
+                'tribunais' => $this->getTribunaisSTF(),
             ],
             '2' => [
-                'nome' => 'Justiça Eleitoral',
-                'tribunais' => $this->getTribunaisEleitorais(),
+                'nome' => 'Conselho Nacional de Justiça (CNJ)',
+                'tribunais' => $this->getTribunaisCNJ(),
             ],
             '3' => [
+                'nome' => 'Superior Tribunal de Justiça (STJ)',
+                'tribunais' => $this->getTribunaisSTJ(),
+            ],
+            '4' => [
+                'nome' => 'Justiça Federal',
+                'tribunais' => $this->getTribunaisFederais(),
+            ],
+            '5' => [
                 'nome' => 'Justiça do Trabalho',
                 'tribunais' => $this->getTribunaisTrabalho(),
             ],
-            '4' => [
-                'nome' => 'Justiça Federal / Militar',
-                'tribunais' => array_merge($this->getTribunaisFederais(), $this->getTribunaisMilitares()),
-            ],
-            '5' => [
-                'nome' => 'Justiça Estadual',
-                'tribunais' => $this->getTribunaisEstaduais(),
-            ],
             '6' => [
-                'nome' => 'Justiça do DF e Territórios',
-                'tribunais' => $this->getTribunaisDF(),
+                'nome' => 'Justiça Eleitoral',
+                'tribunais' => $this->getTribunaisEleitorais(),
             ],
             '7' => [
-                'nome' => 'Tribunais Superiores',
-                'tribunais' => $this->getTribunaisSuperiores(),
+                'nome' => 'Justiça Militar da União',
+                'tribunais' => $this->getTribunaisMilitarUniao(),
             ],
             '8' => [
-                'nome' => 'Justiça Estadual',
+                'nome' => 'Justiça dos Estados e do Distrito Federal e Territórios',
                 'tribunais' => $this->getTribunaisEstaduais(),
+            ],
+            '9' => [
+                'nome' => 'Justiça Militar Estadual',
+                'tribunais' => $this->getTribunaisMilitares(),
             ],
         ];
     }
@@ -306,13 +343,42 @@ class ConsultaProcessualService
     }
 
     /**
-     * Tribunais Superiores
-     * Nota: Código TR 90 é usado para STF, STJ, TSE, TST, STM, CJF, CNJ, CSJT
+     * Supremo Tribunal Federal (STF)
      */
-    private function getTribunaisSuperiores(): array
+    private function getTribunaisSTF(): array
     {
         return [
-            '90' => 'STF/STJ/TSE/TST/STM/CJF/CNJ/CSJT - Tribunais Superiores',
+            '90' => 'STF - Supremo Tribunal Federal',
+        ];
+    }
+
+    /**
+     * Conselho Nacional de Justiça (CNJ)
+     */
+    private function getTribunaisCNJ(): array
+    {
+        return [
+            '90' => 'CNJ - Conselho Nacional de Justiça',
+        ];
+    }
+
+    /**
+     * Superior Tribunal de Justiça (STJ)
+     */
+    private function getTribunaisSTJ(): array
+    {
+        return [
+            '90' => 'STJ - Superior Tribunal de Justiça',
+        ];
+    }
+
+    /**
+     * Justiça Militar da União (STM)
+     */
+    private function getTribunaisMilitarUniao(): array
+    {
+        return [
+            '90' => 'STM - Superior Tribunal Militar',
         ];
     }
 
@@ -401,12 +467,11 @@ class ConsultaProcessualService
     }
 
     /**
-     * Justiça Militar
+     * Justiça Militar Estadual (TJMs)
      */
     private function getTribunaisMilitares(): array
     {
         return [
-            '10' => 'STM - Superior Tribunal Militar',
             '13' => 'TJM-MG - Tribunal de Justiça Militar de Minas Gerais',
             '21' => 'TJM-RS - Tribunal de Justiça Militar do Rio Grande do Sul',
             '26' => 'TJM-SP - Tribunal de Justiça Militar de São Paulo',
@@ -449,14 +514,5 @@ class ConsultaProcessualService
         ];
     }
 
-    /**
-     * Justiça do DF e Territórios
-     */
-    private function getTribunaisDF(): array
-    {
-        return [
-            '07' => 'TJDFT - Distrito Federal e Territórios',
-        ];
-    }
 }
 

@@ -1,10 +1,10 @@
-@extends('layouts.app')
 
-@section('title', 'Consulta Processual')
 
-@section('page-title', 'Consulta Processual')
+<?php $__env->startSection('title', 'Consulta Processual'); ?>
 
-@section('content')
+<?php $__env->startSection('page-title', 'Consulta Processual'); ?>
+
+<?php $__env->startSection('content'); ?>
 <div class="row">
     <div class="col-12">
         <div class="card">
@@ -14,29 +14,32 @@
                 </h5>
             </div>
             <div class="card-body">
-                @if(session('error'))
+                <?php if(session('error')): ?>
                     <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
+                        <i class="fas fa-exclamation-circle me-2"></i><?php echo e(session('error')); ?>
+
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
-                @endif
+                <?php endif; ?>
 
-                @if(session('warning'))
+                <?php if(session('warning')): ?>
                     <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                        <i class="fas fa-exclamation-triangle me-2"></i>{{ session('warning') }}
+                        <i class="fas fa-exclamation-triangle me-2"></i><?php echo e(session('warning')); ?>
+
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
-                @endif
+                <?php endif; ?>
 
-                @if(session('success'))
+                <?php if(session('success')): ?>
                     <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+                        <i class="fas fa-check-circle me-2"></i><?php echo e(session('success')); ?>
+
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
-                @endif
+                <?php endif; ?>
 
-                <form action="{{ route('admin.consulta-processual.consultar') }}" method="POST" id="formConsulta">
-                    @csrf
+                <form action="<?php echo e(route('admin.consulta-processual.consultar')); ?>" method="POST" id="formConsulta">
+                    <?php echo csrf_field(); ?>
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -45,16 +48,30 @@
                             </label>
                             <input 
                                 type="text" 
-                                class="form-control @error('numero_processo') is-invalid @enderror" 
+                                class="form-control <?php $__errorArgs = ['numero_processo'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" 
                                 id="numero_processo" 
                                 name="numero_processo" 
-                                value="{{ old('numero_processo') }}"
+                                value="<?php echo e(old('numero_processo')); ?>"
                                 placeholder="Ex: 0000123-45.2023.8.26.0100"
                                 required
                             >
-                            @error('numero_processo')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            <?php $__errorArgs = ['numero_processo'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                <div class="invalid-feedback"><?php echo e($message); ?></div>
+                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                             <small class="form-text text-muted">
                                 Formato CNJ: NNNNNNN-DD.AAAA.J.TR.OOOO<br>
                                 Exemplo: 5001234-85.2023.8.13.0139<br>
@@ -80,20 +97,35 @@
                                 Tribunal <span class="text-muted">(Opcional)</span>
                             </label>
                             <select 
-                                class="form-select @error('tribunal') is-invalid @enderror" 
+                                class="form-select <?php $__errorArgs = ['tribunal'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>" 
                                 id="tribunal" 
                                 name="tribunal"
                             >
                                 <option value="">Detectar automaticamente do número</option>
-                                @foreach($tribunaisListaPlana as $codigo => $nome)
-                                    <option value="{{ $codigo }}" {{ old('tribunal') == $codigo ? 'selected' : '' }}>
-                                        {{ $codigo }} - {{ $nome }}
+                                <?php $__currentLoopData = $tribunaisListaPlana; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $codigo => $nome): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($codigo); ?>" <?php echo e(old('tribunal') == $codigo ? 'selected' : ''); ?>>
+                                        <?php echo e($codigo); ?> - <?php echo e($nome); ?>
+
                                     </option>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
-                            @error('tribunal')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                            <?php $__errorArgs = ['tribunal'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                <div class="invalid-feedback"><?php echo e($message); ?></div>
+                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                             <small class="form-text text-muted">
                                 O código do tribunal será detectado automaticamente do número do processo (padrão CNJ)
                             </small>
@@ -120,7 +152,7 @@
     </div>
 </div>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
     document.getElementById('formConsulta').addEventListener('submit', function(e) {
         const btnConsultar = document.getElementById('btnConsultar');
@@ -190,7 +222,7 @@
         const infoDiv = document.getElementById('info-processo');
         const infoDetalhes = document.getElementById('info-detalhes');
         const selectTribunal = document.getElementById('tribunal');
-        const tribunaisPorSegmento = @json($tribunaisPorSegmento);
+        const tribunaisPorSegmento = <?php echo json_encode($tribunaisPorSegmento, 15, 512) ?>;
         
         // Limpar informações anteriores
         infoDiv.style.display = 'none';
@@ -332,5 +364,7 @@
         detectarInformacoesProcesso();
     });
 </script>
-@endpush
-@endsection
+<?php $__env->stopPush(); ?>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\Users\joelv\OneDrive\Documentos\Repositorios\Projeto_Advocacia\resources\views/admin/consulta-processual/index.blade.php ENDPATH**/ ?>

@@ -121,18 +121,20 @@ class ProcessoCNJHelper
 
     /**
      * Obter nome do segmento da justiça
+     * Conforme tabela oficial do CNJ - Valor "J" (Segmento/O órgão do Judiciário)
      */
     public static function getNomeSegmento(string $segmento): string
     {
         return match($segmento) {
-            '1' => 'Justiça Federal',
-            '2' => 'Justiça Eleitoral',
-            '3' => 'Justiça do Trabalho',
-            '4' => 'Justiça Militar',
-            '5' => 'Justiça Estadual',
-            '6' => 'Justiça do DF e Territórios',
-            '7' => 'Tribunais Superiores',
-            '8' => 'Justiça Estadual',
+            '1' => 'Supremo Tribunal Federal (STF)',
+            '2' => 'Conselho Nacional de Justiça (CNJ)',
+            '3' => 'Superior Tribunal de Justiça (STJ)',
+            '4' => 'Justiça Federal',
+            '5' => 'Justiça do Trabalho',
+            '6' => 'Justiça Eleitoral',
+            '7' => 'Justiça Militar da União',
+            '8' => 'Justiça dos Estados e do Distrito Federal e Territórios',
+            '9' => 'Justiça Militar Estadual',
             default => 'Desconhecido',
         };
     }

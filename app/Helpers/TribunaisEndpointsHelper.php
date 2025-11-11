@@ -132,13 +132,38 @@ class TribunaisEndpointsHelper
 
     /**
      * Obter endpoints organizados por segmento
-     * Baseado na numeração única do CNJ
+     * Baseado na numeração única do CNJ - Valor "J" (Segmento/O órgão do Judiciário)
+     * 
+     * 1 - Supremo Tribunal Federal (STF)
+     * 2 - Conselho Nacional de Justiça (CNJ)
+     * 3 - Superior Tribunal de Justiça (STJ)
+     * 4 - Justiça Federal
+     * 5 - Justiça do Trabalho
+     * 6 - Justiça Eleitoral
+     * 7 - Justiça Militar da União
+     * 8 - Justiça dos Estados e do Distrito Federal e Territórios
+     * 9 - Justiça Militar Estadual
      */
     public static function getEndpointsPorSegmento(): array
     {
         return [
-            // 1 - Justiça Federal (TRFs)
+            // 1 - Supremo Tribunal Federal (STF)
             '1' => [
+                '90' => 'api_publica_stf',   // STF
+            ],
+            
+            // 2 - Conselho Nacional de Justiça (CNJ)
+            '2' => [
+                '90' => 'api_publica_cnj',   // CNJ (se disponível na API)
+            ],
+            
+            // 3 - Superior Tribunal de Justiça (STJ)
+            '3' => [
+                '90' => 'api_publica_stj',   // STJ
+            ],
+            
+            // 4 - Justiça Federal (TRFs)
+            '4' => [
                 '01' => 'api_publica_trf1',  // TRF 1ª Região
                 '02' => 'api_publica_trf2',  // TRF 2ª Região
                 '03' => 'api_publica_trf3',  // TRF 3ª Região
@@ -147,8 +172,36 @@ class TribunaisEndpointsHelper
                 '06' => 'api_publica_trf6',  // TRF 6ª Região
             ],
             
-            // 2 - Justiça Eleitoral (TREs)
-            '2' => [
+            // 5 - Justiça do Trabalho (TRTs)
+            '5' => [
+                '01' => 'api_publica_trt1',   // TRT 1ª Região (RJ)
+                '02' => 'api_publica_trt2',   // TRT 2ª Região (SP)
+                '03' => 'api_publica_trt3',   // TRT 3ª Região (MG)
+                '04' => 'api_publica_trt4',   // TRT 4ª Região (RS)
+                '05' => 'api_publica_trt5',   // TRT 5ª Região (BA)
+                '06' => 'api_publica_trt6',   // TRT 6ª Região (PE)
+                '07' => 'api_publica_trt7',   // TRT 7ª Região (CE)
+                '08' => 'api_publica_trt8',   // TRT 8ª Região (PA/AP)
+                '09' => 'api_publica_trt9',   // TRT 9ª Região (PR)
+                '10' => 'api_publica_trt10',  // TRT 10ª Região (DF/TO)
+                '11' => 'api_publica_trt11',  // TRT 11ª Região (AM/RR)
+                '12' => 'api_publica_trt12',  // TRT 12ª Região (SC)
+                '13' => 'api_publica_trt13',  // TRT 13ª Região (PB)
+                '14' => 'api_publica_trt14',  // TRT 14ª Região (RO/AC)
+                '15' => 'api_publica_trt15',  // TRT 15ª Região (Campinas/SP)
+                '16' => 'api_publica_trt16',  // TRT 16ª Região (MA)
+                '17' => 'api_publica_trt17',  // TRT 17ª Região (ES)
+                '18' => 'api_publica_trt18',  // TRT 18ª Região (GO)
+                '19' => 'api_publica_trt19',  // TRT 19ª Região (AL)
+                '20' => 'api_publica_trt20',  // TRT 20ª Região (SE)
+                '21' => 'api_publica_trt21',  // TRT 21ª Região (RN)
+                '22' => 'api_publica_trt22',  // TRT 22ª Região (PI)
+                '23' => 'api_publica_trt23',  // TRT 23ª Região (MT)
+                '24' => 'api_publica_trt24',  // TRT 24ª Região (MS)
+            ],
+            
+            // 6 - Justiça Eleitoral (TREs)
+            '6' => [
                 '01' => 'api_publica_tre-ac',  // TRE-AC
                 '02' => 'api_publica_tre-al',  // TRE-AL
                 '03' => 'api_publica_tre-ap',  // TRE-AP
@@ -178,94 +231,12 @@ class TribunaisEndpointsHelper
                 '27' => 'api_publica_tre-to',  // TRE-TO
             ],
             
-            // 3 - Justiça do Trabalho (TRTs)
-            '3' => [
-                '01' => 'api_publica_trt1',   // TRT 1ª Região (RJ)
-                '02' => 'api_publica_trt2',   // TRT 2ª Região (SP)
-                '03' => 'api_publica_trt3',   // TRT 3ª Região (MG)
-                '04' => 'api_publica_trt4',   // TRT 4ª Região (RS)
-                '05' => 'api_publica_trt5',   // TRT 5ª Região (BA)
-                '06' => 'api_publica_trt6',   // TRT 6ª Região (PE)
-                '07' => 'api_publica_trt7',   // TRT 7ª Região (CE)
-                '08' => 'api_publica_trt8',   // TRT 8ª Região (PA/AP)
-                '09' => 'api_publica_trt9',   // TRT 9ª Região (PR)
-                '10' => 'api_publica_trt10',  // TRT 10ª Região (DF/TO)
-                '11' => 'api_publica_trt11',  // TRT 11ª Região (AM/RR)
-                '12' => 'api_publica_trt12',  // TRT 12ª Região (SC)
-                '13' => 'api_publica_trt13',  // TRT 13ª Região (PB)
-                '14' => 'api_publica_trt14',  // TRT 14ª Região (RO/AC)
-                '15' => 'api_publica_trt15',  // TRT 15ª Região (Campinas/SP)
-                '16' => 'api_publica_trt16',  // TRT 16ª Região (MA)
-                '17' => 'api_publica_trt17',  // TRT 17ª Região (ES)
-                '18' => 'api_publica_trt18',  // TRT 18ª Região (GO)
-                '19' => 'api_publica_trt19',  // TRT 19ª Região (AL)
-                '20' => 'api_publica_trt20',  // TRT 20ª Região (SE)
-                '21' => 'api_publica_trt21',  // TRT 21ª Região (RN)
-                '22' => 'api_publica_trt22',  // TRT 22ª Região (PI)
-                '23' => 'api_publica_trt23',  // TRT 23ª Região (MT)
-                '24' => 'api_publica_trt24',  // TRT 24ª Região (MS)
-            ],
-            
-            // 4 - Justiça Militar (unificado com segmento 1 - Justiça Federal)
-            '4' => [
-                // Tribunais Federais (mesmos do segmento 1)
-                '01' => 'api_publica_trf1',  // TRF 1ª Região
-                '02' => 'api_publica_trf2',  // TRF 2ª Região
-                '03' => 'api_publica_trf3',  // TRF 3ª Região
-                '04' => 'api_publica_trf4',  // TRF 4ª Região
-                '05' => 'api_publica_trf5',  // TRF 5ª Região
-                '06' => 'api_publica_trf6',  // TRF 6ª Região
-                // Tribunais Militares
-                '10' => 'api_publica_stm',   // STM - Superior Tribunal Militar
-                '13' => 'api_publica_tjmmg', // TJM-MG
-                '21' => 'api_publica_tjmrs', // TJM-RS
-                '26' => 'api_publica_tjmsp', // TJM-SP
-            ],
-            
-            // 5 - Justiça Estadual (TJs)
-            '5' => [
-                '01' => 'api_publica_tjac',  // TJAC
-                '02' => 'api_publica_tjal',  // TJAL
-                '03' => 'api_publica_tjap',  // TJAP
-                '04' => 'api_publica_tjam',  // TJAM
-                '05' => 'api_publica_tjba',  // TJBA
-                '06' => 'api_publica_tjce',  // TJCE
-                '07' => 'api_publica_tjdft', // TJDFT
-                '08' => 'api_publica_tjes',  // TJES
-                '09' => 'api_publica_tjgo',  // TJGO
-                '10' => 'api_publica_tjma',  // TJMA
-                '11' => 'api_publica_tjmt',  // TJMT
-                '12' => 'api_publica_tjms',  // TJMS
-                '13' => 'api_publica_tjmg',  // TJMG
-                '14' => 'api_publica_tjpa',  // TJPA
-                '15' => 'api_publica_tjpb',  // TJPB
-                '16' => 'api_publica_tjpr',  // TJPR
-                '17' => 'api_publica_tjpe',  // TJPE
-                '18' => 'api_publica_tjpi',  // TJPI
-                '19' => 'api_publica_tjrj',  // TJRJ
-                '20' => 'api_publica_tjrn',  // TJRN
-                '21' => 'api_publica_tjrs',  // TJRS
-                '22' => 'api_publica_tjro',  // TJRO
-                '23' => 'api_publica_tjrr',  // TJRR
-                '24' => 'api_publica_tjsc',  // TJSC
-                '25' => 'api_publica_tjse',  // TJSE
-                '26' => 'api_publica_tjsp',  // TJSP
-                '27' => 'api_publica_tjto',  // TJTO
-            ],
-            
-            // 6 - Justiça do DF e Territórios
-            '6' => [
-                '07' => 'api_publica_tjdft', // TJDFT
-            ],
-            
-            // 7 - Tribunais Superiores
+            // 7 - Justiça Militar da União (STM)
             '7' => [
-                '90' => 'api_publica_stf',   // STF, STJ, TSE, TST, STM, CJF, CNJ, CSJT (código genérico)
-                // Nota: Para identificar qual tribunal superior específico,
-                // pode ser necessário verificar outros campos do número do processo
+                '90' => 'api_publica_stm',   // STM - Superior Tribunal Militar
             ],
             
-            // 8 - Justiça Estadual (mesmo que 5)
+            // 8 - Justiça dos Estados e do Distrito Federal e Territórios (TJs)
             '8' => [
                 '01' => 'api_publica_tjac',  // TJAC
                 '02' => 'api_publica_tjal',  // TJAL
@@ -294,6 +265,13 @@ class TribunaisEndpointsHelper
                 '25' => 'api_publica_tjse',  // TJSE
                 '26' => 'api_publica_tjsp',  // TJSP
                 '27' => 'api_publica_tjto',  // TJTO
+            ],
+            
+            // 9 - Justiça Militar Estadual (TJMs)
+            '9' => [
+                '13' => 'api_publica_tjmmg', // TJM-MG
+                '21' => 'api_publica_tjmrs', // TJM-RS
+                '26' => 'api_publica_tjmsp', // TJM-SP
             ],
         ];
     }
