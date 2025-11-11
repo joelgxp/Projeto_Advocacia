@@ -1,38 +1,49 @@
-name: Deploy via SSH
+name: Build and Deploy
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main, production ]
+  workflow_dispatch:
 
 jobs:
-  ssh-deploy:
+  build:
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup SSH with password
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y sshpass
-          mkdir -p ~/.ssh
-          ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
-
-      - name: Git pull on server
-        run: |
-          sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "cd ${{ secrets.SSH_DIRECTORY }} && \
-            if [ ! -d .git ]; then \
-              echo 'Erro: Diretório não é um repositório Git. Verifique o caminho em SSH_DIRECTORY.'; \
-              echo 'Diretório atual:' && pwd && ls -la; \
-              exit 1; \
-            fi && \
-            git fetch origin && \
-            git merge --abort 2>/dev/null || true && \
-            git reset --hard HEAD && \
-            git clean -fd && \
-            git reset --hard origin/main && \
-            git pull origin main && \
-            echo 'Deploy concluído com sucesso!' && \
-            ls -la"
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install NPM dependencies
+      run: npm ci
+    
+    - name: Build assets
+      run: npm run build
+    
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: mbstring, pdo_mysql, openssl, tokenizer, xml, ctype, json, fileinfo
+    
+    - name: Install Composer dependencies
+      run: composer install --no-dev --optimize-autoloader --no-interaction
+    
+    - name: Create deployment package
+      run: |
+        mkdir -p deploy-package
+        # Copiar arquivos necessários (excluindo node_modules, etc)
+        rsync -av --exclude='node_modules' --exclude='.git' --exclude='.github' \
+          --exclude='tests' --exclude='.env' --exclude='storage/logs/*' \
+          . deploy-package/
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: deployment-package
+        path: deploy-package/
+        retention-days: 7

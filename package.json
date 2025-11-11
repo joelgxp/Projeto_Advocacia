@@ -1,0 +1,28 @@
+{
+    "name": "sistema-advocacia",
+    "version": "1.0.0",
+    "description": "Sistema de Gerenciamento para Escritório de Advocacia",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview"
+    },
+    "devDependencies": {
+        "axios": "^1.6.4",
+        "laravel-vite-plugin": "^1.0",
+        "vite": "^5.0"
+    },
+    "dependencies": {
+        "alpinejs": "^3.13.3",
+        "bootstrap": "^5.3.2",
+        "@fullcalendar/core": "^6.1.10",
+        "@fullcalendar/daygrid": "^6.1.10",
+        "@fullcalendar/timegrid": "^6.1.10",
+        "@fullcalendar/interaction": "^6.1.10",
+        "chart.js": "^4.4.1",
+        "sweetalert2": "^11.10.5"
+    }
+}
+
