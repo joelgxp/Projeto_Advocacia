@@ -78,8 +78,36 @@ jobs:
           sudo apt-get install -y sshpass
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+          
+          # Tentar adicionar host keys com retry
+          echo "Verificando conectividade com o servidor..."
+          for i in {1..3}; do
+            if ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null; then
+              echo "✅ Conectividade estabelecida com o servidor"
+              break
+            else
+              echo "⚠️ Tentativa $i de 3 falhou, aguardando 5 segundos..."
+              sleep 5
+            fi
+          done
           chmod 600 ~/.ssh/known_hosts
+          
+          # Verificar se conseguimos conectar ao servidor
+          echo "Testando conexão SSH..."
+          if ! sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} \
+               -o ConnectTimeout=10 \
+               -o StrictHostKeyChecking=no \
+               ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "echo 'SSH OK'" 2>&1; then
+            echo "❌ ERRO: Não foi possível conectar ao servidor SSH"
+            echo "Verifique:"
+            echo "  - Se o servidor SSH está rodando"
+            echo "  - Se as credenciais SSH (SSH_HOST, SSH_PORT, SSH_USER, SSH_PASSPHRASE) estão corretas"
+            echo "  - Se o firewall está bloqueando a conexão"
+            echo "  - Se há limites de conexão SSH no servidor"
+            exit 1
+          else
+            echo "✅ Conexão SSH estabelecida com sucesso"
+          fi
 
       - name: Upload diagnostic scripts to server
         run: |
@@ -401,18 +429,47 @@ jobs:
 
       - name: Git pull on server
         run: |
-          sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "cd ${{ secrets.SSH_DIRECTORY }} && \
-            if [ ! -d .git ]; then \
-              echo '❌ Erro: Diretório não é um repositório Git. Verifique o caminho em SSH_DIRECTORY.'; \
-              echo 'Diretório atual:' && pwd && ls -la; \
-              exit 1; \
-            fi && \
-            echo '📥 Fazendo git fetch...' && \
-            git fetch origin && \
-            echo '🔄 Fazendo git pull...' && \
-            git pull origin main && \
-            echo '✅ Deploy concluído com sucesso!' && \
-            echo '' && \
-            echo '📦 Arquivos atualizados:' && \
-            ls -la public/build/ 2>/dev/null || echo '⚠️ public/build não encontrado'"
+          echo "Conectando ao servidor para deploy..."
+          
+          # Tentar conectar com retry
+          MAX_RETRIES=3
+          RETRY_COUNT=0
+          
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} \
+                 -o ConnectTimeout=30 \
+                 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+              "cd ${{ secrets.SSH_DIRECTORY }} && \
+              if [ ! -d .git ]; then \
+                echo '❌ Erro: Diretório não é um repositório Git. Verifique o caminho em SSH_DIRECTORY.'; \
+                echo 'Diretório atual:' && pwd && ls -la; \
+                exit 1; \
+              fi && \
+              echo '📥 Fazendo git fetch...' && \
+              git fetch origin && \
+              echo '🔄 Fazendo git pull...' && \
+              git pull origin main && \
+              echo '✅ Deploy concluído com sucesso!' && \
+              echo '' && \
+              echo '📦 Arquivos atualizados:' && \
+              ls -la public/build/ 2>/dev/null || echo '⚠️ public/build não encontrado'"; then
+              
+              echo "✅ Deploy executado com sucesso"
+              exit 0
+            else
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                echo "⚠️ Tentativa $RETRY_COUNT de $MAX_RETRIES falhou, aguardando 10 segundos..."
+                sleep 10
+              fi
+            fi
+          done
+          
+          echo "❌ ERRO: Falha ao conectar ao servidor após $MAX_RETRIES tentativas"
+          echo "O servidor pode estar:"
+          echo "  - Temporariamente indisponível"
+          echo "  - Com o serviço SSH parado"
+          echo "  - Com limite de conexões atingido"
+          echo ""
+          echo "Por favor, verifique o servidor e tente novamente."
+          exit 1
