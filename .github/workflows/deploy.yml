@@ -81,16 +81,17 @@ jobs:
           ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      - name: Upload diagnostic script to server
+      - name: Upload diagnostic scripts to server
         run: |
-          echo "📤 Enviando script de diagnóstico para o servidor..."
+          echo "📤 Enviando scripts de diagnóstico para o servidor..."
           sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
             "mkdir -p ${{ secrets.SSH_DIRECTORY }}/scripts" || true
           
           sshpass -p "${{ secrets.SSH_PASSPHRASE }}" scp -P ${{ secrets.SSH_PORT }} \
             scripts/check-server.sh \
-            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_DIRECTORY }}/scripts/check-server.sh || {
-            echo "⚠️ Erro ao enviar script, tentando método alternativo..."
+            scripts/check-laravel-online.sh \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_DIRECTORY }}/scripts/ || {
+            echo "⚠️ Erro ao enviar scripts, tentando método alternativo..."
             exit 1
           }
 
@@ -100,31 +101,55 @@ jobs:
         run: |
           echo "🔍 Executando diagnóstico no servidor..."
           
-          # Executar script de diagnóstico no servidor
+          # Executar scripts de diagnóstico no servidor
+          echo "Executando diagnóstico geral..."
           sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
             "cd ${{ secrets.SSH_DIRECTORY }} && \
-            chmod +x scripts/check-server.sh && \
-            bash scripts/check-server.sh 2>&1" || echo "⚠️ Erro ao executar diagnóstico"
+            chmod +x scripts/check-server.sh scripts/check-laravel-online.sh 2>/dev/null && \
+            echo '=== DIAGNÓSTICO GERAL ===' && \
+            bash scripts/check-server.sh 2>&1" || echo "⚠️ Erro ao executar diagnóstico geral"
           
-          # Aguardar um momento para o arquivo ser criado
-          sleep 2
+          echo ""
+          echo "Executando diagnóstico Laravel online..."
+          sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "cd ${{ secrets.SSH_DIRECTORY }} && \
+            echo '' && echo '=== DIAGNÓSTICO LARAVEL ONLINE ===' && \
+            bash scripts/check-laravel-online.sh 2>&1" || echo "⚠️ Erro ao executar diagnóstico Laravel online"
           
-          # Buscar e baixar o arquivo de relatório mais recente
+          # Aguardar um momento para os arquivos serem criados
+          sleep 3
+          
+          # Buscar e baixar os relatórios mais recentes
           REPORT_FILE=$(sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "cd ${{ secrets.SSH_DIRECTORY }} && ls -t diagnostico-servidor-*.txt 2>/dev/null | head -1" || echo "")
+            "cd ${{ secrets.SSH_DIRECTORY }} && ls -t diagnostico-*.txt 2>/dev/null | head -1" || echo "")
           
+          LARAVEL_REPORT=$(sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "cd ${{ secrets.SSH_DIRECTORY }} && ls -t diagnostico-laravel-online-*.txt 2>/dev/null | head -1" || echo "")
+          
+          # Combinar relatórios
+          echo "📥 Baixando relatórios..."
           if [ -n "$REPORT_FILE" ] && [ "$REPORT_FILE" != "" ]; then
-            echo "📥 Baixando relatório: $REPORT_FILE"
             sshpass -p "${{ secrets.SSH_PASSPHRASE }}" scp -P ${{ secrets.SSH_PORT }} \
               ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_DIRECTORY }}/$REPORT_FILE \
-              diagnostic-report.txt && \
-            echo "✅ Relatório baixado com sucesso" || \
-            echo "⚠️ Erro ao baixar relatório"
-          else
-            echo "⚠️ Nenhum arquivo de relatório encontrado no servidor"
-            echo "Tentando capturar saída do diagnóstico..."
-            sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-              "cd ${{ secrets.SSH_DIRECTORY }} && bash scripts/check-server.sh 2>&1" > diagnostic-report.txt || true
+              diagnostic-report.txt 2>/dev/null || true
+          fi
+          
+          if [ -n "$LARAVEL_REPORT" ] && [ "$LARAVEL_REPORT" != "" ]; then
+            sshpass -p "${{ secrets.SSH_PASSPHRASE }}" scp -P ${{ secrets.SSH_PORT }} \
+              ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_DIRECTORY }}/$LARAVEL_REPORT \
+              diagnostic-laravel-online.txt 2>/dev/null || true
+            
+            # Combinar relatórios
+            if [ -f "diagnostic-report.txt" ] && [ -f "diagnostic-laravel-online.txt" ]; then
+              echo "" >> diagnostic-report.txt
+              echo "==========================================" >> diagnostic-report.txt
+              echo "  DIAGNÓSTICO LARAVEL ONLINE (ESPECÍFICO)" >> diagnostic-report.txt
+              echo "==========================================" >> diagnostic-report.txt
+              echo "" >> diagnostic-report.txt
+              cat diagnostic-laravel-online.txt >> diagnostic-report.txt
+            elif [ -f "diagnostic-laravel-online.txt" ]; then
+              cp diagnostic-laravel-online.txt diagnostic-report.txt
+            fi
           fi
           
           # Verificar se o relatório existe e tem conteúdo
@@ -156,16 +181,32 @@ jobs:
           add_to_summary ""
           
           if [ -f "diagnostic-report.txt" ] && [ -s "diagnostic-report.txt" ]; then
-            # Verificar problemas
+            # Verificar problemas críticos do Laravel online
+            HAS_APP_KEY_ISSUE=$(grep -qi "APP_KEY.*não está configurado\|APP_KEY não configurado" diagnostic-report.txt 2>/dev/null && echo "true" || echo "false")
             HAS_STORAGE_LOGS_ISSUE=$(grep -qi "storage/logs.*NÃO existe" diagnostic-report.txt 2>/dev/null && echo "true" || echo "false")
             HAS_COMPOSER_ISSUE=$(grep -qi "Composer.*não instalado" diagnostic-report.txt 2>/dev/null && echo "true" || echo "false")
+            HAS_INDEX_ISSUE=$(grep -qi "public/index.php.*NÃO existe\|index.php NÃO existe" diagnostic-report.txt 2>/dev/null && echo "true" || echo "false")
+            HAS_HTACCESS_ISSUE=$(grep -qi "public/.htaccess.*NÃO existe\|.htaccess NÃO existe" diagnostic-report.txt 2>/dev/null && echo "true" || echo "false")
             
-            if [ "$HAS_STORAGE_LOGS_ISSUE" = "true" ] || [ "$HAS_COMPOSER_ISSUE" = "true" ]; then
+            if [ "$HAS_APP_KEY_ISSUE" = "true" ] || [ "$HAS_STORAGE_LOGS_ISSUE" = "true" ] || [ "$HAS_INDEX_ISSUE" = "true" ] || [ "$HAS_HTACCESS_ISSUE" = "true" ] || [ "$HAS_COMPOSER_ISSUE" = "true" ]; then
               add_to_summary "### ⚠️ Itens que Precisam de Atenção"
               add_to_summary ""
               
+              if [ "$HAS_APP_KEY_ISSUE" = "true" ]; then
+                add_to_summary "❌ **CRÍTICO: APP_KEY não está configurado!**"
+                add_to_summary "   Execute: php artisan key:generate"
+                add_to_summary ""
+              fi
+              if [ "$HAS_INDEX_ISSUE" = "true" ]; then
+                add_to_summary "❌ **CRÍTICO: public/index.php não existe!**"
+                add_to_summary ""
+              fi
+              if [ "$HAS_HTACCESS_ISSUE" = "true" ]; then
+                add_to_summary "❌ **CRÍTICO: public/.htaccess não existe!**"
+                add_to_summary ""
+              fi
               if [ "$HAS_STORAGE_LOGS_ISSUE" = "true" ]; then
-                add_to_summary "❌ **storage/logs** não existe"
+                add_to_summary "⚠️ **storage/logs** não existe"
               fi
               if [ "$HAS_COMPOSER_ISSUE" = "true" ]; then
                 add_to_summary "⚠️ **Composer** não está no PATH (mas vendor/ existe, dependências instaladas)"
@@ -180,6 +221,15 @@ jobs:
             # Resumo executivo
             add_to_summary "### 📊 Resumo Executivo"
             add_to_summary ""
+            
+            # Verificar APP_KEY (CRÍTICO)
+            if grep -qi "APP_KEY.*está configurado" diagnostic-report.txt 2>/dev/null; then
+              add_to_summary "✅ **APP_KEY:** Configurado"
+            elif [ "$HAS_APP_KEY_ISSUE" = "true" ]; then
+              add_to_summary "❌ **APP_KEY:** NÃO configurado (CRÍTICO!)"
+            else
+              add_to_summary "⚠️ **APP_KEY:** Não verificado"
+            fi
             
             # Verificar .env
             if grep -qi "Arquivo .env existe" diagnostic-report.txt 2>/dev/null; then
@@ -254,6 +304,13 @@ jobs:
             add_to_summary ""
             
             # Comandos baseados nos problemas
+            if [ "$HAS_APP_KEY_ISSUE" = "true" ]; then
+              add_to_summary "**🔴 CRÍTICO: Gerar APP_KEY (OBRIGATÓRIO):**"
+              add_to_summary '```bash'
+              add_to_summary "php artisan key:generate"
+              add_to_summary '```'
+              add_to_summary ""
+            fi
             if [ "$HAS_STORAGE_LOGS_ISSUE" = "true" ]; then
               add_to_summary "**Criar diretório storage/logs:**"
               add_to_summary '```bash'
