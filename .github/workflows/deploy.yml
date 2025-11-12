@@ -108,23 +108,44 @@ jobs:
             rm -rf bootstrap/cache/*.php 2>&1 && \
             echo '  Cache limpo' && \
             echo '' && \
-            echo '15. RESUMO DO PROBLEMA:' && \
+            echo '15. Testando bootstrap mínimo do Laravel:' && \
+            php -r \"require __DIR__.'/vendor/autoload.php'; echo 'Autoload OK\n';\" 2>&1 || echo '  ❌ Erro no autoload!' && \
+            echo '' && \
+            echo '16. Testando bootstrap completo:' && \
+            timeout 2 php -r \"require __DIR__.'/vendor/autoload.php'; \\\$app = require_once __DIR__.'/bootstrap/app.php'; echo 'Bootstrap OK\n';\" 2>&1 || echo '  ❌ Erro ou timeout no bootstrap!' && \
+            echo '' && \
+            echo '17. Verificando Service Providers problemáticos:' && \
+            grep -r \"class.*ServiceProvider\" app/Providers/ | head -10 && \
+            echo '' && \
+            echo '18. Verificando observers registrados:' && \
+            grep -r \"Observer\" app/Providers/ app/Models/ | head -10 || echo '  Nenhum observer encontrado' && \
+            echo '' && \
+            echo '19. Testando se as migrações existem:' && \
+            DB_HOST=\$(grep '^DB_HOST=' .env | cut -d= -f2) && \
+            DB_USERNAME=\$(grep '^DB_USERNAME=' .env | cut -d= -f2) && \
+            DB_PASSWORD=\$(grep '^DB_PASSWORD=' .env | cut -d= -f2 | sed \"s/'//g\" | sed 's/\"//g') && \
+            DB_DATABASE=\$(grep '^DB_DATABASE=' .env | cut -d= -f2) && \
+            timeout 2 mysql -h\$DB_HOST -u\$DB_USERNAME -p\"\$DB_PASSWORD\" \$DB_DATABASE -e 'SHOW TABLES;' 2>&1 | head -15 || echo '  ❌ Sem acesso ao banco ou sem tabelas' && \
+            echo '' && \
+            echo '20. RESUMO DO PROBLEMA:' && \
             echo '  ========================================' && \
             if timeout 2 mysql -hlocalhost -u\$(grep '^DB_USERNAME=' .env | cut -d= -f2) -p\"\$(grep '^DB_PASSWORD=' .env | cut -d= -f2 | sed \"s/'//g\" | sed 's/\"//g')\" -e 'SELECT 1;' >/dev/null 2>&1; then \
-              echo '  ✅ Conexão MySQL OK' && \
-              echo '  ⚠️ Problema pode ser em outro lugar'; \
-            else \
-              echo '  ❌ PROBLEMA CONFIRMADO: MySQL Access Denied' && \
+              echo '  ✅ Conexão MySQL: OK' && \
+              echo '  ❌ Laravel travando na inicialização' && \
               echo '' && \
-              echo '  AÇÕES NECESSÁRIAS (cPanel):' && \
-              echo '  1. Verificar se o banco existe: \$(grep '^DB_DATABASE=' .env | cut -d= -f2)' && \
-              echo '  2. Verificar se o usuário existe: \$(grep '^DB_USERNAME=' .env | cut -d= -f2)' && \
-              echo '  3. Adicionar usuário ao banco com ALL PRIVILEGES' && \
-              echo '  4. Verificar/corrigir senha do banco' && \
+              echo '  Possíveis causas:' && \
+              echo '  - Service Provider problemático' && \
+              echo '  - Observer travando' && \
+              echo '  - Consulta ao banco na inicialização' && \
+              echo '  - Cache corrompido' && \
               echo '' && \
-              echo '  COMANDO PARA TESTAR (após corrigir no cPanel):' && \
+              echo '  TESTE NO SERVIDOR:' && \
+              echo '    cd /home2/hotel631/adv.joelsouza.com.br' && \
               echo '    php artisan config:clear' && \
-              echo '    php artisan migrate:status'; \
+              echo '    php artisan --version'; \
+            else \
+              echo '  ❌ Conexão MySQL: FALHOU' && \
+              echo '  Corrija as credenciais do banco no cPanel'; \
             fi && \
             echo '  ========================================' && \
             echo '' && \
