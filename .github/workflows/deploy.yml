@@ -82,11 +82,29 @@ jobs:
               echo 'Sem logs de erro'; \
             fi && \
             echo '' && \
-            echo '11. Tentando executar index.php diretamente (timeout 3s):' && \
-            timeout 3 php public/index.php 2>&1 | head -30 || echo 'ERRO ou TIMEOUT ao executar index.php!' && \
+            echo '11. Configuração do Banco de Dados:' && \
+            echo 'DB_CONNECTION:' && grep '^DB_CONNECTION=' .env || echo 'Não definido' && \
+            echo 'DB_HOST:' && grep '^DB_HOST=' .env || echo 'Não definido' && \
+            echo 'DB_DATABASE:' && grep '^DB_DATABASE=' .env || echo 'Não definido' && \
             echo '' && \
-            echo '12. Verificando erros de sintaxe PHP em arquivos principais:' && \
-            php -l public/index.php && \
-            php -l bootstrap/app.php 2>&1 || echo 'Erro em bootstrap/app.php' && \
+            echo '12. Testando conexão MySQL (timeout 2s):' && \
+            DB_HOST=\$(grep '^DB_HOST=' .env | cut -d= -f2) && \
+            DB_DATABASE=\$(grep '^DB_DATABASE=' .env | cut -d= -f2) && \
+            DB_USERNAME=\$(grep '^DB_USERNAME=' .env | cut -d= -f2) && \
+            DB_PASSWORD=\$(grep '^DB_PASSWORD=' .env | cut -d= -f2) && \
+            timeout 2 mysql -h\$DB_HOST -u\$DB_USERNAME -p\$DB_PASSWORD -e 'SELECT 1;' 2>&1 | head -5 || echo 'ERRO ou TIMEOUT na conexão MySQL!' && \
+            echo '' && \
+            echo '13. Limpando cache Laravel:' && \
+            rm -rf bootstrap/cache/*.php 2>&1 && \
+            echo 'Cache limpo' && \
+            echo '' && \
+            echo '14. Tentando executar index.php APÓS limpar cache (timeout 3s):' && \
+            timeout 3 php public/index.php 2>&1 | head -30 || echo 'ERRO ou TIMEOUT!' && \
+            echo '' && \
+            echo '15. Tentando artisan cache:clear (timeout 3s):' && \
+            timeout 3 php artisan cache:clear 2>&1 || echo 'ERRO ou TIMEOUT!' && \
+            echo '' && \
+            echo '16. Verificando se há processos PHP travados:' && \
+            ps aux | grep php | grep -v grep | head -5 || echo 'Nenhum processo PHP encontrado' && \
             echo '' && \
             echo '========================================'" || echo "⚠️ Erro crítico ao executar diagnóstico"
