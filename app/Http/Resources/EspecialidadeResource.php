@@ -24,3 +24,4 @@ class EspecialidadeResource extends JsonResource
 
 
 
+

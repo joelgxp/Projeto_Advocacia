@@ -23,3 +23,4 @@ class Cargo extends Model
 
 
 
+
