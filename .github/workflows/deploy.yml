@@ -36,3 +36,37 @@ jobs:
             git pull origin main && \
             echo 'Deploy concluído com sucesso!' && \
             ls -la"
+      
+      - name: Validações pós-deploy (diagnóstico)
+        if: always()
+        continue-on-error: true
+        run: |
+          echo "=========================================="
+          echo "  DIAGNÓSTICO RÁPIDO PÓS-DEPLOY"
+          echo "=========================================="
+          
+          sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "cd ${{ secrets.SSH_DIRECTORY }} && \
+            echo '1. Verificando APP_KEY no .env:' && \
+            grep '^APP_KEY=' .env && \
+            echo '' && \
+            echo '2. Verificando se artisan funciona:' && \
+            php artisan --version 2>&1 | head -5 && \
+            echo '' && \
+            echo '3. Verificando permissões storage/:' && \
+            ls -la storage/ | head -5 && \
+            echo '' && \
+            echo '4. Verificando permissões bootstrap/cache/:' && \
+            ls -la bootstrap/cache/ | head -5 && \
+            echo '' && \
+            echo '5. Verificando últimos erros nos logs (se existir):' && \
+            if [ -f storage/logs/laravel.log ]; then \
+              tail -20 storage/logs/laravel.log; \
+            else \
+              echo 'Nenhum log encontrado (isso pode ser bom ou ruim)'; \
+            fi && \
+            echo '' && \
+            echo '6. Testando se o PHP consegue executar o index.php:' && \
+            php -l public/index.php && \
+            echo '' && \
+            echo '========================================'" || echo "⚠️ Erro ao executar diagnóstico"
