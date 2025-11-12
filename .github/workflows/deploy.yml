@@ -101,66 +101,86 @@ jobs:
         run: |
           echo "🔍 Executando diagnóstico no servidor..."
           
-          # Executar scripts de diagnóstico no servidor
+          # Criar arquivo de relatório vazio
+          touch diagnostic-report.txt
+          
+          # Executar scripts de diagnóstico no servidor e capturar saída
           echo "Executando diagnóstico geral..."
-          sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+          DIAGNOSTIC_OUTPUT=$(sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
             "cd ${{ secrets.SSH_DIRECTORY }} && \
             chmod +x scripts/check-server.sh scripts/check-laravel-online.sh 2>/dev/null && \
             echo '=== DIAGNÓSTICO GERAL ===' && \
-            bash scripts/check-server.sh 2>&1" || echo "⚠️ Erro ao executar diagnóstico geral"
+            bash scripts/check-server.sh 2>&1" 2>&1) || DIAGNOSTIC_OUTPUT="⚠️ Erro ao executar diagnóstico geral: $DIAGNOSTIC_OUTPUT"
+          
+          echo "$DIAGNOSTIC_OUTPUT" >> diagnostic-report.txt
           
           echo ""
           echo "Executando diagnóstico Laravel online..."
-          sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+          LARAVEL_OUTPUT=$(sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
             "cd ${{ secrets.SSH_DIRECTORY }} && \
             echo '' && echo '=== DIAGNÓSTICO LARAVEL ONLINE ===' && \
-            bash scripts/check-laravel-online.sh 2>&1" || echo "⚠️ Erro ao executar diagnóstico Laravel online"
+            bash scripts/check-laravel-online.sh 2>&1" 2>&1) || LARAVEL_OUTPUT="⚠️ Erro ao executar diagnóstico Laravel online: $LARAVEL_OUTPUT"
           
-          # Aguardar um momento para os arquivos serem criados
+          echo "" >> diagnostic-report.txt
+          echo "$LARAVEL_OUTPUT" >> diagnostic-report.txt
+          
+          # Aguardar um momento para os arquivos serem criados no servidor
           sleep 3
           
-          # Buscar e baixar os relatórios mais recentes
+          # Tentar baixar os relatórios do servidor (se disponíveis)
+          echo "📥 Tentando baixar relatórios do servidor..."
+          
           REPORT_FILE=$(sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "cd ${{ secrets.SSH_DIRECTORY }} && ls -t diagnostico-*.txt 2>/dev/null | head -1" || echo "")
+            "cd ${{ secrets.SSH_DIRECTORY }} && ls -t diagnostico-servidor-*.txt 2>/dev/null | head -1" 2>&1 || echo "")
           
           LARAVEL_REPORT=$(sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-            "cd ${{ secrets.SSH_DIRECTORY }} && ls -t diagnostico-laravel-online-*.txt 2>/dev/null | head -1" || echo "")
+            "cd ${{ secrets.SSH_DIRECTORY }} && ls -t diagnostico-laravel-online-*.txt 2>/dev/null | head -1" 2>&1 || echo "")
           
-          # Combinar relatórios
-          echo "📥 Baixando relatórios..."
-          if [ -n "$REPORT_FILE" ] && [ "$REPORT_FILE" != "" ]; then
+          # Baixar relatórios se encontrados
+          if [ -n "$REPORT_FILE" ] && [ "$REPORT_FILE" != "" ] && [ "$REPORT_FILE" != *"Connection refused"* ] && [ "$REPORT_FILE" != *"error"* ]; then
+            echo "Baixando relatório geral: $REPORT_FILE"
             sshpass -p "${{ secrets.SSH_PASSPHRASE }}" scp -P ${{ secrets.SSH_PORT }} \
               ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_DIRECTORY }}/$REPORT_FILE \
-              diagnostic-report.txt 2>/dev/null || true
+              diagnostic-server.txt 2>&1 || echo "⚠️ Não foi possível baixar relatório geral"
+            
+            if [ -f "diagnostic-server.txt" ] && [ -s "diagnostic-server.txt" ]; then
+              cat diagnostic-server.txt > diagnostic-report.txt
+            fi
           fi
           
-          if [ -n "$LARAVEL_REPORT" ] && [ "$LARAVEL_REPORT" != "" ]; then
+          if [ -n "$LARAVEL_REPORT" ] && [ "$LARAVEL_REPORT" != "" ] && [ "$LARAVEL_REPORT" != *"Connection refused"* ] && [ "$LARAVEL_REPORT" != *"error"* ]; then
+            echo "Baixando relatório Laravel: $LARAVEL_REPORT"
             sshpass -p "${{ secrets.SSH_PASSPHRASE }}" scp -P ${{ secrets.SSH_PORT }} \
               ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_DIRECTORY }}/$LARAVEL_REPORT \
-              diagnostic-laravel-online.txt 2>/dev/null || true
+              diagnostic-laravel-online.txt 2>&1 || echo "⚠️ Não foi possível baixar relatório Laravel"
             
             # Combinar relatórios
-            if [ -f "diagnostic-report.txt" ] && [ -f "diagnostic-laravel-online.txt" ]; then
+            if [ -f "diagnostic-report.txt" ] && [ -s "diagnostic-report.txt" ] && [ -f "diagnostic-laravel-online.txt" ] && [ -s "diagnostic-laravel-online.txt" ]; then
               echo "" >> diagnostic-report.txt
               echo "==========================================" >> diagnostic-report.txt
               echo "  DIAGNÓSTICO LARAVEL ONLINE (ESPECÍFICO)" >> diagnostic-report.txt
               echo "==========================================" >> diagnostic-report.txt
               echo "" >> diagnostic-report.txt
               cat diagnostic-laravel-online.txt >> diagnostic-report.txt
-            elif [ -f "diagnostic-laravel-online.txt" ]; then
-              cp diagnostic-laravel-online.txt diagnostic-report.txt
+            elif [ -f "diagnostic-laravel-online.txt" ] && [ -s "diagnostic-laravel-online.txt" ]; then
+              cat diagnostic-laravel-online.txt > diagnostic-report.txt
             fi
           fi
           
-          # Verificar se o relatório existe e tem conteúdo
+          # Verificar se o relatório tem conteúdo
           if [ -f "diagnostic-report.txt" ] && [ -s "diagnostic-report.txt" ]; then
             LINE_COUNT=$(wc -l < diagnostic-report.txt)
             echo "✅ Relatório preparado ($LINE_COUNT linhas)"
+            echo ""
+            echo "Primeiras 10 linhas do relatório:"
+            head -10 diagnostic-report.txt
           else
             echo "⚠️ Relatório vazio ou não encontrado"
-            echo "Verificando estrutura do servidor..." > diagnostic-report.txt
-            sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
-              "cd ${{ secrets.SSH_DIRECTORY }} && pwd && ls -la | head -20" >> diagnostic-report.txt 2>&1 || true
+            echo "Usando saída capturada do diagnóstico..."
+            if [ -z "$DIAGNOSTIC_OUTPUT" ] && [ -z "$LARAVEL_OUTPUT" ]; then
+              echo "Erro: Não foi possível conectar ao servidor ou executar diagnóstico" > diagnostic-report.txt
+              echo "Verifique as credenciais SSH e a conectividade com o servidor." >> diagnostic-report.txt
+            fi
           fi
 
       - name: Display diagnostic summary
