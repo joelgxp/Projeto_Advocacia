@@ -47,41 +47,46 @@ jobs:
           
           sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
             "cd ${{ secrets.SSH_DIRECTORY }} && \
-            echo '1. Verificando APP_KEY no .env:' && \
-            grep '^APP_KEY=' .env && \
+            echo '1. APP_KEY:' && \
+            grep '^APP_KEY=' .env || echo 'Não encontrado' && \
             echo '' && \
-            echo '2. Verificando se artisan funciona:' && \
-            php artisan --version 2>&1 && \
+            echo '2. APP_URL:' && \
+            grep '^APP_URL=' .env || echo 'Não encontrado' && \
             echo '' && \
-            echo '3. Testando se o Laravel carrega (route:list):' && \
-            php artisan route:list 2>&1 | head -10 && \
+            echo '3. APP_DEBUG:' && \
+            grep '^APP_DEBUG=' .env || echo 'Não encontrado' && \
             echo '' && \
-            echo '4. Verificando APP_URL:' && \
-            grep '^APP_URL=' .env && \
+            echo '4. Verificando vendor/autoload.php:' && \
+            ls -la vendor/autoload.php 2>&1 || echo 'ERRO: vendor/autoload.php NÃO EXISTE!' && \
             echo '' && \
-            echo '5. Verificando APP_DEBUG:' && \
-            grep '^APP_DEBUG=' .env && \
+            echo '5. Verificando bootstrap/app.php:' && \
+            ls -la bootstrap/app.php 2>&1 || echo 'ERRO: bootstrap/app.php NÃO EXISTE!' && \
             echo '' && \
-            echo '6. Verificando permissões storage/:' && \
+            echo '6. Verificando .env existe:' && \
+            ls -la .env || echo 'ERRO: .env NÃO EXISTE!' && \
+            echo '' && \
+            echo '7. Permissões storage/:' && \
             ls -la storage/ | head -5 && \
             echo '' && \
-            echo '7. Verificando permissões bootstrap/cache/:' && \
+            echo '8. Permissões bootstrap/cache/:' && \
             ls -la bootstrap/cache/ | head -5 && \
             echo '' && \
-            echo '8. Verificando se vendor/autoload.php existe:' && \
-            ls -la vendor/autoload.php && \
+            echo '9. Tentando executar artisan (timeout 3s):' && \
+            timeout 3 php artisan --version 2>&1 || echo 'ERRO ou TIMEOUT no artisan!' && \
             echo '' && \
-            echo '9. Verificando últimos erros nos logs:' && \
+            echo '10. Logs de erro (se existir):' && \
             if [ -f storage/logs/laravel.log ]; then \
-              tail -30 storage/logs/laravel.log; \
+              echo '--- ÚLTIMAS 40 LINHAS DO LOG ---' && \
+              tail -40 storage/logs/laravel.log; \
             else \
-              echo 'Nenhum log de erro encontrado'; \
+              echo 'Sem logs de erro'; \
             fi && \
             echo '' && \
-            echo '10. Testando sintaxe do index.php:' && \
+            echo '11. Tentando executar index.php diretamente (timeout 3s):' && \
+            timeout 3 php public/index.php 2>&1 | head -30 || echo 'ERRO ou TIMEOUT ao executar index.php!' && \
+            echo '' && \
+            echo '12. Verificando erros de sintaxe PHP em arquivos principais:' && \
             php -l public/index.php && \
+            php -l bootstrap/app.php 2>&1 || echo 'Erro em bootstrap/app.php' && \
             echo '' && \
-            echo '11. Tentando executar o index.php (primeiras linhas):' && \
-            timeout 5 php public/index.php 2>&1 | head -20 || echo 'Timeout ou erro ao executar' && \
-            echo '' && \
-            echo '========================================'" || echo "⚠️ Erro ao executar diagnóstico"
+            echo '========================================'" || echo "⚠️ Erro crítico ao executar diagnóstico"
