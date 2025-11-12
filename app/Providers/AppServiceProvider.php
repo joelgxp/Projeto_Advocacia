@@ -24,14 +24,16 @@ class AppServiceProvider extends ServiceProvider
     {
         Schema::defaultStringLength(191);
         
-        // Configurações de timezone
-        date_default_timezone_set(config('app.timezone'));
-        
-        // Otimizações de performance
-        if (app()->environment('production')) {
-            // Desabilitar query logging em produção
-            \DB::connection()->disableQueryLog();
+        // Configurações de timezone - usar variável de ambiente diretamente
+        $timezone = env('APP_TIMEZONE', 'America/Sao_Paulo');
+        if ($timezone) {
+            date_default_timezone_set($timezone);
         }
+        
+        // Otimizações de performance (comentado - pode causar travamento na inicialização)
+        // if (app()->environment('production')) {
+        //     \DB::connection()->disableQueryLog();
+        // }
         
         // Registrar observers
         Processo::observe(ProcessoObserver::class);

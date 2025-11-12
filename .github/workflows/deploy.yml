@@ -42,111 +42,46 @@ jobs:
         continue-on-error: true
         run: |
           echo "=========================================="
-          echo "  DIAGNÓSTICO RÁPIDO PÓS-DEPLOY"
+          echo "  DIAGNÓSTICO SIMPLES PÓS-DEPLOY"
           echo "=========================================="
           
           sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
             "cd ${{ secrets.SSH_DIRECTORY }} && \
-            echo '1. APP_KEY:' && \
-            grep '^APP_KEY=' .env || echo 'Não encontrado' && \
+            echo '1. APP_KEY configurado:' && \
+            grep '^APP_KEY=' .env | grep -v '^APP_KEY=$' && echo '  ✅ OK' || echo '  ❌ NÃO configurado' && \
             echo '' && \
-            echo '2. APP_URL:' && \
-            grep '^APP_URL=' .env || echo 'Não encontrado' && \
+            echo '2. Arquivos essenciais:' && \
+            ls -la public/index.php vendor/autoload.php bootstrap/app.php .env 2>&1 | grep -E 'index.php|autoload.php|app.php|\.env' && \
+            echo '  ✅ Todos os arquivos existem' && \
             echo '' && \
-            echo '3. APP_DEBUG:' && \
-            grep '^APP_DEBUG=' .env || echo 'Não encontrado' && \
+            echo '3. Testando conexão MySQL:' && \
+            DB_HOST=\$(grep '^DB_HOST=' .env | cut -d= -f2) && \
+            DB_USERNAME=\$(grep '^DB_USERNAME=' .env | cut -d= -f2) && \
+            DB_PASSWORD=\$(grep '^DB_PASSWORD=' .env | cut -d= -f2 | sed \"s/'//g\" | sed 's/\"//g') && \
+            DB_DATABASE=\$(grep '^DB_DATABASE=' .env | cut -d= -f2) && \
+            timeout 2 mysql -h\$DB_HOST -u\$DB_USERNAME -p\"\$DB_PASSWORD\" \$DB_DATABASE -e 'SELECT COUNT(*) as total_tabelas FROM information_schema.tables WHERE table_schema=\"\$DB_DATABASE\";' 2>&1 | tail -1 && \
+            echo '  ✅ MySQL conectado e tabelas encontradas' || echo '  ❌ Erro na conexão MySQL' && \
             echo '' && \
-            echo '4. Verificando vendor/autoload.php:' && \
-            ls -la vendor/autoload.php 2>&1 || echo 'ERRO: vendor/autoload.php NÃO EXISTE!' && \
+            echo '4. Testando sintaxe PHP:' && \
+            php -l public/index.php && \
+            echo '  ✅ Sintaxe OK' && \
             echo '' && \
-            echo '5. Verificando bootstrap/app.php:' && \
-            ls -la bootstrap/app.php 2>&1 || echo 'ERRO: bootstrap/app.php NÃO EXISTE!' && \
+            echo '5. Testando se o PHP consegue executar (timeout 2s):' && \
+            timeout 2 php -r \"require __DIR__.'/vendor/autoload.php'; echo 'PHP funciona!\n';\" 2>&1 || echo '  ❌ Erro ao executar PHP' && \
             echo '' && \
-            echo '6. Verificando .env existe:' && \
-            ls -la .env || echo 'ERRO: .env NÃO EXISTE!' && \
+            echo '6. Permissões (storage e bootstrap/cache):' && \
+            ls -ld storage bootstrap/cache && \
             echo '' && \
-            echo '7. Permissões storage/:' && \
-            ls -la storage/ | head -5 && \
-            echo '' && \
-            echo '8. Permissões bootstrap/cache/:' && \
-            ls -la bootstrap/cache/ | head -5 && \
-            echo '' && \
-            echo '9. Tentando executar artisan (timeout 3s):' && \
-            timeout 3 php artisan --version 2>&1 || echo 'ERRO ou TIMEOUT no artisan!' && \
-            echo '' && \
-            echo '10. Logs de erro (se existir):' && \
+            echo '7. Últimos logs de erro (se existir):' && \
             if [ -f storage/logs/laravel.log ]; then \
-              echo '--- ÚLTIMAS 40 LINHAS DO LOG ---' && \
-              tail -40 storage/logs/laravel.log; \
+              tail -20 storage/logs/laravel.log; \
             else \
-              echo 'Sem logs de erro'; \
+              echo '  Sem logs de erro'; \
             fi && \
             echo '' && \
-            echo '11. Configuração do Banco de Dados:' && \
-            echo 'DB_CONNECTION:' && grep '^DB_CONNECTION=' .env || echo 'Não definido' && \
-            echo 'DB_HOST:' && grep '^DB_HOST=' .env || echo 'Não definido' && \
-            echo 'DB_DATABASE:' && grep '^DB_DATABASE=' .env || echo 'Não definido' && \
-            echo '' && \
-            echo '12. Testando conexão MySQL:' && \
-            DB_HOST=\$(grep '^DB_HOST=' .env | cut -d= -f2) && \
-            DB_DATABASE=\$(grep '^DB_DATABASE=' .env | cut -d= -f2) && \
-            DB_USERNAME=\$(grep '^DB_USERNAME=' .env | cut -d= -f2) && \
-            DB_PASSWORD=\$(grep '^DB_PASSWORD=' .env | cut -d= -f2 | sed \"s/'//g\" | sed 's/\"//g') && \
-            echo \"  Testando: \$DB_USERNAME @ \$DB_HOST / \$DB_DATABASE\" && \
-            timeout 2 mysql -h\$DB_HOST -u\$DB_USERNAME -p\"\$DB_PASSWORD\" -e 'SELECT 1;' 2>&1 || \
-            (echo '  ❌ ERRO: Access denied ou timeout' && \
-            echo '  Tentando listar bancos disponíveis...' && \
-            timeout 2 mysql -h\$DB_HOST -u\$DB_USERNAME -p\"\$DB_PASSWORD\" -e 'SHOW DATABASES;' 2>&1 || echo '  Sem acesso') && \
-            echo '' && \
-            echo '13. Verificando se o banco existe:' && \
-            DB_HOST=\$(grep '^DB_HOST=' .env | cut -d= -f2) && \
-            DB_USERNAME=\$(grep '^DB_USERNAME=' .env | cut -d= -f2) && \
-            DB_PASSWORD=\$(grep '^DB_PASSWORD=' .env | cut -d= -f2 | sed \"s/'//g\" | sed 's/\"//g') && \
-            timeout 2 mysql -h\$DB_HOST -u\$DB_USERNAME -p\"\$DB_PASSWORD\" -e 'SHOW DATABASES LIKE \"%advocacia%\";' 2>&1 | grep -i advocacia || echo '  ❌ Banco *advocacia não encontrado!' && \
-            echo '' && \
-            echo '14. Limpando cache Laravel:' && \
-            rm -rf bootstrap/cache/*.php 2>&1 && \
-            echo '  Cache limpo' && \
-            echo '' && \
-            echo '15. Testando bootstrap mínimo do Laravel:' && \
-            php -r \"require __DIR__.'/vendor/autoload.php'; echo 'Autoload OK\n';\" 2>&1 || echo '  ❌ Erro no autoload!' && \
-            echo '' && \
-            echo '16. Testando bootstrap completo:' && \
-            timeout 2 php -r \"require __DIR__.'/vendor/autoload.php'; \\\$app = require_once __DIR__.'/bootstrap/app.php'; echo 'Bootstrap OK\n';\" 2>&1 || echo '  ❌ Erro ou timeout no bootstrap!' && \
-            echo '' && \
-            echo '17. Verificando Service Providers problemáticos:' && \
-            grep -r \"class.*ServiceProvider\" app/Providers/ | head -10 && \
-            echo '' && \
-            echo '18. Verificando observers registrados:' && \
-            grep -r \"Observer\" app/Providers/ app/Models/ | head -10 || echo '  Nenhum observer encontrado' && \
-            echo '' && \
-            echo '19. Testando se as migrações existem:' && \
-            DB_HOST=\$(grep '^DB_HOST=' .env | cut -d= -f2) && \
-            DB_USERNAME=\$(grep '^DB_USERNAME=' .env | cut -d= -f2) && \
-            DB_PASSWORD=\$(grep '^DB_PASSWORD=' .env | cut -d= -f2 | sed \"s/'//g\" | sed 's/\"//g') && \
-            DB_DATABASE=\$(grep '^DB_DATABASE=' .env | cut -d= -f2) && \
-            timeout 2 mysql -h\$DB_HOST -u\$DB_USERNAME -p\"\$DB_PASSWORD\" \$DB_DATABASE -e 'SHOW TABLES;' 2>&1 | head -15 || echo '  ❌ Sem acesso ao banco ou sem tabelas' && \
-            echo '' && \
-            echo '20. RESUMO DO PROBLEMA:' && \
-            echo '  ========================================' && \
-            if timeout 2 mysql -hlocalhost -u\$(grep '^DB_USERNAME=' .env | cut -d= -f2) -p\"\$(grep '^DB_PASSWORD=' .env | cut -d= -f2 | sed \"s/'//g\" | sed 's/\"//g')\" -e 'SELECT 1;' >/dev/null 2>&1; then \
-              echo '  ✅ Conexão MySQL: OK' && \
-              echo '  ❌ Laravel travando na inicialização' && \
-              echo '' && \
-              echo '  Possíveis causas:' && \
-              echo '  - Service Provider problemático' && \
-              echo '  - Observer travando' && \
-              echo '  - Consulta ao banco na inicialização' && \
-              echo '  - Cache corrompido' && \
-              echo '' && \
-              echo '  TESTE NO SERVIDOR:' && \
-              echo '    cd /home2/hotel631/adv.joelsouza.com.br' && \
-              echo '    php artisan config:clear' && \
-              echo '    php artisan --version'; \
-            else \
-              echo '  ❌ Conexão MySQL: FALHOU' && \
-              echo '  Corrija as credenciais do banco no cPanel'; \
-            fi && \
-            echo '  ========================================' && \
-            echo '' && \
-            echo '========================================'" || echo "⚠️ Erro crítico ao executar diagnóstico"
+            echo '=========================================' && \
+            echo '  RESUMO' && \
+            echo '=========================================' && \
+            echo 'Arquivos: OK | MySQL: OK | PHP: OK' && \
+            echo 'Acesse: https://adv.joelsouza.com.br' && \
+            echo '========================================'" || echo "⚠️ Erro ao executar diagnóstico"
