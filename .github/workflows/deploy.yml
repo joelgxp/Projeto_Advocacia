@@ -148,13 +148,34 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           
           if [ -f "diagnostic-report.txt" ] && [ -s "diagnostic-report.txt" ]; then
-            # Contar itens críticos
-            CRITICAL_COUNT=$(grep -ci "❌ CRÍTICO\|CRITICAL" diagnostic-report.txt || echo "0")
+            # Verificar se há itens críticos (simplificado)
+            HAS_CRITICAL=false
             
-            if [ "$CRITICAL_COUNT" -gt "0" ]; then
-              echo "### ⚠️ $CRITICAL_COUNT Item(ns) Crítico(s) Encontrado(s)" >> $GITHUB_STEP_SUMMARY
+            if grep -qi "❌.*NÃO existe\|❌.*não instalado\|ITENS CRÍTICOS:" diagnostic-report.txt 2>/dev/null; then
+              HAS_CRITICAL=true
+            fi
+            
+            # Contar problemas encontrados
+            PROBLEM_COUNT=0
+            if grep -qi "storage/logs.*NÃO existe" diagnostic-report.txt 2>/dev/null; then
+              PROBLEM_COUNT=$((PROBLEM_COUNT + 1))
+            fi
+            if grep -qi "Composer.*não instalado" diagnostic-report.txt 2>/dev/null; then
+              PROBLEM_COUNT=$((PROBLEM_COUNT + 1))
+            fi
+            
+            if [ "$HAS_CRITICAL" = true ] || [ "$PROBLEM_COUNT" -gt 0 ] 2>/dev/null; then
+              echo "### ⚠️ Itens que Precisam de Atenção" >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
-              grep -i "❌ CRÍTICO\|CRITICAL" diagnostic-report.txt | head -10 >> $GITHUB_STEP_SUMMARY
+              
+              # Mostrar problemas específicos
+              if grep -qi "storage/logs.*NÃO existe" diagnostic-report.txt 2>/dev/null; then
+                echo "❌ **storage/logs** não existe" >> $GITHUB_STEP_SUMMARY
+              fi
+              if grep -qi "Composer.*não instalado" diagnostic-report.txt 2>/dev/null; then
+                echo "❌ **Composer** não instalado" >> $GITHUB_STEP_SUMMARY
+              fi
+              
               echo "" >> $GITHUB_STEP_SUMMARY
             else
               echo "### ✅ Nenhum Item Crítico Encontrado" >> $GITHUB_STEP_SUMMARY
@@ -166,70 +187,132 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             
             # Verificar .env
-            if grep -qi "arquivo .env.*existe" diagnostic-report.txt; then
+            if grep -qi "✅.*arquivo .env.*existe\|Arquivo .env existe" diagnostic-report.txt 2>/dev/null; then
               echo "✅ **Arquivo .env:** Existe" >> $GITHUB_STEP_SUMMARY
-            elif grep -qi "arquivo .env.*NÃO existe" diagnostic-report.txt; then
+            elif grep -qi "❌.*arquivo .env.*NÃO existe\|Arquivo .env NÃO existe" diagnostic-report.txt 2>/dev/null; then
               echo "❌ **Arquivo .env:** NÃO existe" >> $GITHUB_STEP_SUMMARY
             else
               echo "ℹ️ **Arquivo .env:** Não verificado" >> $GITHUB_STEP_SUMMARY
             fi
             
             # Verificar bootstrap/cache
-            if grep -qi "bootstrap/cache.*existe" diagnostic-report.txt; then
+            if grep -qi "✅.*bootstrap/cache.*existe\|bootstrap/cache existe" diagnostic-report.txt 2>/dev/null; then
               echo "✅ **bootstrap/cache:** Existe" >> $GITHUB_STEP_SUMMARY
-            elif grep -qi "bootstrap/cache.*NÃO existe" diagnostic-report.txt; then
+            elif grep -qi "❌.*bootstrap/cache.*NÃO existe\|bootstrap/cache NÃO existe" diagnostic-report.txt 2>/dev/null; then
               echo "❌ **bootstrap/cache:** NÃO existe" >> $GITHUB_STEP_SUMMARY
             else
               echo "ℹ️ **bootstrap/cache:** Não verificado" >> $GITHUB_STEP_SUMMARY
             fi
             
             # Verificar storage/framework
-            if grep -qi "storage/framework.*existe" diagnostic-report.txt; then
+            if grep -qi "✅.*storage/framework.*existe\|storage/framework existe" diagnostic-report.txt 2>/dev/null; then
               echo "✅ **storage/framework:** Existe" >> $GITHUB_STEP_SUMMARY
-            elif grep -qi "storage/framework.*NÃO existe" diagnostic-report.txt; then
+            elif grep -qi "❌.*storage/framework.*NÃO existe\|storage/framework NÃO existe" diagnostic-report.txt 2>/dev/null; then
               echo "❌ **storage/framework:** NÃO existe" >> $GITHUB_STEP_SUMMARY
             else
               echo "ℹ️ **storage/framework:** Não verificado" >> $GITHUB_STEP_SUMMARY
             fi
             
+            # Verificar storage/logs
+            if grep -qi "✅.*storage/logs.*existe\|storage/logs existe" diagnostic-report.txt 2>/dev/null; then
+              echo "✅ **storage/logs:** Existe" >> $GITHUB_STEP_SUMMARY
+            elif grep -qi "❌.*storage/logs.*NÃO existe\|storage/logs NÃO existe" diagnostic-report.txt 2>/dev/null; then
+              echo "⚠️ **storage/logs:** NÃO existe (criar: mkdir -p storage/logs)" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "ℹ️ **storage/logs:** Não verificado" >> $GITHUB_STEP_SUMMARY
+            fi
+            
             # Verificar vendor
-            if grep -qi "vendor.*existe" diagnostic-report.txt; then
+            if grep -qi "✅.*vendor.*existe\|Diretório vendor/" diagnostic-report.txt 2>/dev/null; then
               echo "✅ **vendor/:** Existe" >> $GITHUB_STEP_SUMMARY
-            elif grep -qi "vendor.*NÃO existe" diagnostic-report.txt; then
+            elif grep -qi "❌.*vendor.*NÃO existe" diagnostic-report.txt 2>/dev/null; then
               echo "❌ **vendor/:** NÃO existe" >> $GITHUB_STEP_SUMMARY
             else
               echo "ℹ️ **vendor/:** Não verificado" >> $GITHUB_STEP_SUMMARY
             fi
             
             # Verificar PHP
-            PHP_VERSION=$(grep -i "PHP.*versão\|PHP.*version" diagnostic-report.txt | head -1 | sed 's/.*[Vv]ersão: *//;s/.*[Vv]ersion: *//' | head -c 20)
-            if [ -n "$PHP_VERSION" ]; then
-              echo "✅ **PHP:** $PHP_VERSION" >> $GITHUB_STEP_SUMMARY
+            PHP_LINE=$(grep -i "PHP.*[0-9]\|Versão.*PHP\|Version.*PHP" diagnostic-report.txt 2>/dev/null | head -1)
+            if [ -n "$PHP_LINE" ]; then
+              PHP_VERSION=$(echo "$PHP_LINE" | grep -oE "PHP [0-9]+\.[0-9]+\.[0-9]+" | head -1 | sed 's/PHP //' || echo "$PHP_LINE" | sed 's/.*[Vv]ersão: *//;s/.*[Vv]ersion: *//' | awk '{print $1}' | head -c 15)
+              if [ -n "$PHP_VERSION" ] && [ "$PHP_VERSION" != "" ]; then
+                echo "✅ **PHP:** $PHP_VERSION" >> $GITHUB_STEP_SUMMARY
+              else
+                echo "✅ **PHP:** Instalado (versão não detectada)" >> $GITHUB_STEP_SUMMARY
+              fi
             else
               echo "⚠️ **PHP:** Não detectado" >> $GITHUB_STEP_SUMMARY
             fi
             
             # Verificar Composer
-            if grep -qi "Composer.*instalado" diagnostic-report.txt; then
+            if grep -qi "✅.*Composer.*instalado\|Composer instalado" diagnostic-report.txt 2>/dev/null; then
               echo "✅ **Composer:** Instalado" >> $GITHUB_STEP_SUMMARY
+            elif grep -qi "❌.*Composer.*não instalado\|Composer não instalado" diagnostic-report.txt 2>/dev/null; then
+              # Verificar se vendor existe (indica que dependências foram instaladas)
+              if grep -qi "✅.*vendor.*existe\|Diretório vendor/" diagnostic-report.txt 2>/dev/null; then
+                echo "⚠️ **Composer:** Não no PATH (mas dependências instaladas)" >> $GITHUB_STEP_SUMMARY
+              else
+                echo "❌ **Composer:** Não instalado (vendor/ também não existe)" >> $GITHUB_STEP_SUMMARY
+              fi
             else
               echo "⚠️ **Composer:** Não verificado" >> $GITHUB_STEP_SUMMARY
             fi
             
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "### 📋 Detalhes dos Itens Críticos" >> $GITHUB_STEP_SUMMARY
+            echo "### 📋 Itens que Precisam de Atenção" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             
-            # Extrair seção de itens críticos
-            awk '/ITENS CRÍTICOS/,/ITENS DE AVISO/' diagnostic-report.txt | head -30 >> $GITHUB_STEP_SUMMARY 2>/dev/null || \
-            grep -A 5 "❌ CRÍTICO" diagnostic-report.txt | head -20 >> $GITHUB_STEP_SUMMARY || \
-            echo "Nenhum detalhe de item crítico encontrado" >> $GITHUB_STEP_SUMMARY
+            # Extrair seção de itens críticos e avisos
+            if grep -qi "ITENS CRÍTICOS\|ITENS DE AVISO" diagnostic-report.txt 2>/dev/null; then
+              awk '/ITENS CRÍTICOS/,/COMANDOS PARA CORRIGIR/' diagnostic-report.txt 2>/dev/null | head -40 >> $GITHUB_STEP_SUMMARY || \
+              awk '/ITENS DE AVISO/,/COMANDOS PARA CORRIGIR/' diagnostic-report.txt 2>/dev/null | head -30 >> $GITHUB_STEP_SUMMARY || \
+              grep -E "❌|⚠️" diagnostic-report.txt 2>/dev/null | head -15 >> $GITHUB_STEP_SUMMARY
+            else
+              # Buscar por padrões de problemas
+              grep -E "❌|NÃO existe|não instalado" diagnostic-report.txt 2>/dev/null | head -10 >> $GITHUB_STEP_SUMMARY || \
+              echo "✅ Nenhum problema crítico encontrado no relatório" >> $GITHUB_STEP_SUMMARY
+            fi
             
             echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 🔧 Comandos para Corrigir Problemas" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            # Adicionar comandos baseados nos problemas encontrados
+            if grep -qi "storage/logs.*NÃO existe" diagnostic-report.txt 2>/dev/null; then
+              echo "**Criar diretório storage/logs:**" >> $GITHUB_STEP_SUMMARY
+              echo '```bash' >> $GITHUB_STEP_SUMMARY
+              echo "mkdir -p storage/logs && chmod -R 775 storage" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            if grep -qi "Composer.*não instalado" diagnostic-report.txt 2>/dev/null; then
+              echo "**Instalar Composer (se necessário):**" >> $GITHUB_STEP_SUMMARY
+              echo '```bash' >> $GITHUB_STEP_SUMMARY
+              echo "# Baixar e instalar Composer" >> $GITHUB_STEP_SUMMARY
+              echo "php -r \"copy('https://getcomposer.org/installer', 'composer-setup.php');\"" >> $GITHUB_STEP_SUMMARY
+              echo "php composer-setup.php --install-dir=/usr/local/bin --filename=composer" >> $GITHUB_STEP_SUMMARY
+              echo "php -r \"unlink('composer-setup.php');\"" >> $GITHUB_STEP_SUMMARY
+              echo "# Ou usar: composer install --no-dev --optimize-autoloader" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            # Adicionar comandos gerais do Laravel
+            echo "**Comandos Gerais do Laravel:**" >> $GITHUB_STEP_SUMMARY
+            echo '```bash' >> $GITHUB_STEP_SUMMARY
+            echo "# Limpar e regenerar cache" >> $GITHUB_STEP_SUMMARY
+            echo "php artisan config:clear" >> $GITHUB_STEP_SUMMARY
+            echo "php artisan config:cache" >> $GITHUB_STEP_SUMMARY
+            echo "php artisan route:cache" >> $GITHUB_STEP_SUMMARY
+            echo "php artisan view:cache" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
             echo "### 📄 Relatório Completo" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "<details>" >> $GITHUB_STEP_SUMMARY
-            echo "<summary>🔽 Clique para expandir o relatório completo ($(wc -l < diagnostic-report.txt) linhas)</summary>" >> $GITHUB_STEP_SUMMARY
+            echo "<summary>🔽 Clique para expandir o relatório completo ($(wc -l < diagnostic-report.txt | tr -d ' ') linhas)</summary>" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             cat diagnostic-report.txt >> $GITHUB_STEP_SUMMARY
