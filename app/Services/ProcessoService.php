@@ -4,22 +4,17 @@ namespace App\Services;
 
 use App\Enums\ProcessoStatus;
 use App\Models\Processo;
-use App\Repositories\Contracts\ProcessoRepositoryInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class ProcessoService
 {
-    public function __construct(
-        private ProcessoRepositoryInterface $processoRepository
-    ) {}
-
     public function criarProcesso(array $data): Processo
     {
         try {
             DB::beginTransaction();
 
-            $processo = $this->processoRepository->create($data);
+            $processo = Processo::create($data);
 
             // Log da criação
             Log::info('Processo criado', [
@@ -45,7 +40,7 @@ class ProcessoService
         try {
             DB::beginTransaction();
 
-            $this->processoRepository->update($processo, $data);
+            $processo->update($data);
             $processo->refresh();
 
             Log::info('Processo atualizado', [
@@ -77,7 +72,7 @@ class ProcessoService
         try {
             DB::beginTransaction();
 
-            $result = $this->processoRepository->delete($processo);
+            $result = $processo->delete();
 
             Log::info('Processo excluído', [
                 'processo_id' => $processo->id,
@@ -98,12 +93,12 @@ class ProcessoService
 
     public function buscarProcessosAtivos(): \Illuminate\Database\Eloquent\Collection
     {
-        return $this->processoRepository->findByStatus(ProcessoStatus::ANDAMENTO->value);
+        return Processo::where('status', ProcessoStatus::ANDAMENTO->value)->get();
     }
 
     public function buscarProcessosPorStatus(ProcessoStatus $status): \Illuminate\Database\Eloquent\Collection
     {
-        return $this->processoRepository->findByStatus($status->value);
+        return Processo::where('status', $status->value)->get();
     }
 
     public function contarProcessosAtivos(): int
