@@ -81,6 +81,205 @@ jobs:
           ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
+      - name: Upload diagnostic script to server
+        run: |
+          echo "📤 Enviando script de diagnóstico para o servidor..."
+          sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "mkdir -p ${{ secrets.SSH_DIRECTORY }}/scripts" || true
+          
+          sshpass -p "${{ secrets.SSH_PASSPHRASE }}" scp -P ${{ secrets.SSH_PORT }} \
+            scripts/check-server.sh \
+            ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_DIRECTORY }}/scripts/check-server.sh || {
+            echo "⚠️ Erro ao enviar script, tentando método alternativo..."
+            exit 1
+          }
+
+      - name: Run server diagnostic
+        id: diagnostic
+        continue-on-error: true
+        run: |
+          echo "🔍 Executando diagnóstico no servidor..."
+          
+          # Executar script de diagnóstico no servidor
+          sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "cd ${{ secrets.SSH_DIRECTORY }} && \
+            chmod +x scripts/check-server.sh && \
+            bash scripts/check-server.sh 2>&1" || echo "⚠️ Erro ao executar diagnóstico"
+          
+          # Aguardar um momento para o arquivo ser criado
+          sleep 2
+          
+          # Buscar e baixar o arquivo de relatório mais recente
+          REPORT_FILE=$(sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            "cd ${{ secrets.SSH_DIRECTORY }} && ls -t diagnostico-servidor-*.txt 2>/dev/null | head -1" || echo "")
+          
+          if [ -n "$REPORT_FILE" ] && [ "$REPORT_FILE" != "" ]; then
+            echo "📥 Baixando relatório: $REPORT_FILE"
+            sshpass -p "${{ secrets.SSH_PASSPHRASE }}" scp -P ${{ secrets.SSH_PORT }} \
+              ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:${{ secrets.SSH_DIRECTORY }}/$REPORT_FILE \
+              diagnostic-report.txt && \
+            echo "✅ Relatório baixado com sucesso" || \
+            echo "⚠️ Erro ao baixar relatório"
+          else
+            echo "⚠️ Nenhum arquivo de relatório encontrado no servidor"
+            echo "Tentando capturar saída do diagnóstico..."
+            sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+              "cd ${{ secrets.SSH_DIRECTORY }} && bash scripts/check-server.sh 2>&1" > diagnostic-report.txt || true
+          fi
+          
+          # Verificar se o relatório existe e tem conteúdo
+          if [ -f "diagnostic-report.txt" ] && [ -s "diagnostic-report.txt" ]; then
+            LINE_COUNT=$(wc -l < diagnostic-report.txt)
+            echo "✅ Relatório preparado ($LINE_COUNT linhas)"
+          else
+            echo "⚠️ Relatório vazio ou não encontrado"
+            echo "Verificando estrutura do servidor..." > diagnostic-report.txt
+            sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+              "cd ${{ secrets.SSH_DIRECTORY }} && pwd && ls -la | head -20" >> diagnostic-report.txt 2>&1 || true
+          fi
+
+      - name: Display diagnostic summary
+        if: always()
+        run: |
+          echo "## 🔍 Diagnóstico do Servidor" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Data:** $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "**Servidor:** ${{ secrets.SSH_HOST }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f "diagnostic-report.txt" ] && [ -s "diagnostic-report.txt" ]; then
+            # Contar itens críticos
+            CRITICAL_COUNT=$(grep -ci "❌ CRÍTICO\|CRITICAL" diagnostic-report.txt || echo "0")
+            
+            if [ "$CRITICAL_COUNT" -gt "0" ]; then
+              echo "### ⚠️ $CRITICAL_COUNT Item(ns) Crítico(s) Encontrado(s)" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              grep -i "❌ CRÍTICO\|CRITICAL" diagnostic-report.txt | head -10 >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "### ✅ Nenhum Item Crítico Encontrado" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            # Resumo executivo
+            echo "### 📊 Resumo Executivo" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            # Verificar .env
+            if grep -qi "arquivo .env.*existe" diagnostic-report.txt; then
+              echo "✅ **Arquivo .env:** Existe" >> $GITHUB_STEP_SUMMARY
+            elif grep -qi "arquivo .env.*NÃO existe" diagnostic-report.txt; then
+              echo "❌ **Arquivo .env:** NÃO existe" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "ℹ️ **Arquivo .env:** Não verificado" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            # Verificar bootstrap/cache
+            if grep -qi "bootstrap/cache.*existe" diagnostic-report.txt; then
+              echo "✅ **bootstrap/cache:** Existe" >> $GITHUB_STEP_SUMMARY
+            elif grep -qi "bootstrap/cache.*NÃO existe" diagnostic-report.txt; then
+              echo "❌ **bootstrap/cache:** NÃO existe" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "ℹ️ **bootstrap/cache:** Não verificado" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            # Verificar storage/framework
+            if grep -qi "storage/framework.*existe" diagnostic-report.txt; then
+              echo "✅ **storage/framework:** Existe" >> $GITHUB_STEP_SUMMARY
+            elif grep -qi "storage/framework.*NÃO existe" diagnostic-report.txt; then
+              echo "❌ **storage/framework:** NÃO existe" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "ℹ️ **storage/framework:** Não verificado" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            # Verificar vendor
+            if grep -qi "vendor.*existe" diagnostic-report.txt; then
+              echo "✅ **vendor/:** Existe" >> $GITHUB_STEP_SUMMARY
+            elif grep -qi "vendor.*NÃO existe" diagnostic-report.txt; then
+              echo "❌ **vendor/:** NÃO existe" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "ℹ️ **vendor/:** Não verificado" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            # Verificar PHP
+            PHP_VERSION=$(grep -i "PHP.*versão\|PHP.*version" diagnostic-report.txt | head -1 | sed 's/.*[Vv]ersão: *//;s/.*[Vv]ersion: *//' | head -c 20)
+            if [ -n "$PHP_VERSION" ]; then
+              echo "✅ **PHP:** $PHP_VERSION" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "⚠️ **PHP:** Não detectado" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            # Verificar Composer
+            if grep -qi "Composer.*instalado" diagnostic-report.txt; then
+              echo "✅ **Composer:** Instalado" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "⚠️ **Composer:** Não verificado" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 📋 Detalhes dos Itens Críticos" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            
+            # Extrair seção de itens críticos
+            awk '/ITENS CRÍTICOS/,/ITENS DE AVISO/' diagnostic-report.txt | head -30 >> $GITHUB_STEP_SUMMARY 2>/dev/null || \
+            grep -A 5 "❌ CRÍTICO" diagnostic-report.txt | head -20 >> $GITHUB_STEP_SUMMARY || \
+            echo "Nenhum detalhe de item crítico encontrado" >> $GITHUB_STEP_SUMMARY
+            
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 📄 Relatório Completo" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "<details>" >> $GITHUB_STEP_SUMMARY
+            echo "<summary>🔽 Clique para expandir o relatório completo ($(wc -l < diagnostic-report.txt) linhas)</summary>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat diagnostic-report.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "💡 **Dica:** O relatório completo também está disponível como artifact para download." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ⚠️ Relatório não disponível" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "O relatório de diagnóstico não foi gerado ou está vazio." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Possíveis causas:**" >> $GITHUB_STEP_SUMMARY
+            echo "- Erro de conexão SSH" >> $GITHUB_STEP_SUMMARY
+            echo "- Script de diagnóstico não foi executado" >> $GITHUB_STEP_SUMMARY
+            echo "- Problemas de permissão no servidor" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            if [ -f "diagnostic-report.txt" ]; then
+              echo "**Conteúdo capturado:**" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              head -50 diagnostic-report.txt >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+          
+          # Log preview
+          echo ""
+          echo "=========================================="
+          echo "  PREVIEW DO DIAGNÓSTICO"
+          echo "=========================================="
+          if [ -f "diagnostic-report.txt" ] && [ -s "diagnostic-report.txt" ]; then
+            echo "Primeiras 50 linhas:"
+            head -50 diagnostic-report.txt
+            echo ""
+            echo "... (relatório completo: $(wc -l < diagnostic-report.txt) linhas)"
+            echo "Ver relatório completo no GitHub Actions Summary acima ou no artifact"
+          else
+            echo "⚠️ Relatório não disponível"
+          fi
+
+      - name: Upload diagnostic report as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: diagnostic-report-${{ github.run_number }}
+          path: diagnostic-report.txt
+          retention-days: 30
+          if-no-files-found: warn
+
       - name: Git pull on server
         run: |
           sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
