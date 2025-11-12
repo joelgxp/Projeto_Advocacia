@@ -223,3 +223,4 @@ class DadosMigracaoSeeder extends Seeder
 }
 
 
+
