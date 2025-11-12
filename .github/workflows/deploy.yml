@@ -51,22 +51,37 @@ jobs:
             grep '^APP_KEY=' .env && \
             echo '' && \
             echo '2. Verificando se artisan funciona:' && \
-            php artisan --version 2>&1 | head -5 && \
+            php artisan --version 2>&1 && \
             echo '' && \
-            echo '3. Verificando permissões storage/:' && \
+            echo '3. Testando se o Laravel carrega (route:list):' && \
+            php artisan route:list 2>&1 | head -10 && \
+            echo '' && \
+            echo '4. Verificando APP_URL:' && \
+            grep '^APP_URL=' .env && \
+            echo '' && \
+            echo '5. Verificando APP_DEBUG:' && \
+            grep '^APP_DEBUG=' .env && \
+            echo '' && \
+            echo '6. Verificando permissões storage/:' && \
             ls -la storage/ | head -5 && \
             echo '' && \
-            echo '4. Verificando permissões bootstrap/cache/:' && \
+            echo '7. Verificando permissões bootstrap/cache/:' && \
             ls -la bootstrap/cache/ | head -5 && \
             echo '' && \
-            echo '5. Verificando últimos erros nos logs (se existir):' && \
+            echo '8. Verificando se vendor/autoload.php existe:' && \
+            ls -la vendor/autoload.php && \
+            echo '' && \
+            echo '9. Verificando últimos erros nos logs:' && \
             if [ -f storage/logs/laravel.log ]; then \
-              tail -20 storage/logs/laravel.log; \
+              tail -30 storage/logs/laravel.log; \
             else \
-              echo 'Nenhum log encontrado (isso pode ser bom ou ruim)'; \
+              echo 'Nenhum log de erro encontrado'; \
             fi && \
             echo '' && \
-            echo '6. Testando se o PHP consegue executar o index.php:' && \
+            echo '10. Testando sintaxe do index.php:' && \
             php -l public/index.php && \
+            echo '' && \
+            echo '11. Tentando executar o index.php (primeiras linhas):' && \
+            timeout 5 php public/index.php 2>&1 | head -20 || echo 'Timeout ou erro ao executar' && \
             echo '' && \
             echo '========================================'" || echo "⚠️ Erro ao executar diagnóstico"
