@@ -339,4 +339,3 @@ jobs:
             echo '' && \
             echo '📦 Arquivos atualizados:' && \
             ls -la public/build/ 2>/dev/null || echo '⚠️ public/build não encontrado'"
-            ls -la public/build/ 2>/dev/null || echo '⚠️ public/build não encontrado'"
