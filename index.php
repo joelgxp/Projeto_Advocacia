@@ -53,7 +53,29 @@
  *
  * NOTE: If you change these, also change the error_reporting() code below
  */
-	define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'development');
+	// Detectar ambiente do .env (suporta Laravel APP_ENV e CodeIgniter APP_ENVIRONMENT)
+	$env = getenv('APP_ENVIRONMENT');
+	if (empty($env)) {
+		$env = getenv('APP_ENV'); // Tentar Laravel format
+	}
+	if (empty($env)) {
+		// Tentar ler do .env manualmente
+		$env_file = __DIR__ . '/.env';
+		if (file_exists($env_file)) {
+			$lines = file($env_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+			foreach ($lines as $line) {
+				$line = trim($line);
+				if (empty($line) || strpos($line, '#') === 0) {
+					continue;
+				}
+				if (preg_match('/^(APP_ENV|APP_ENVIRONMENT)\s*=\s*(\w+)/', $line, $matches)) {
+					$env = trim($matches[2]);
+					break;
+				}
+			}
+		}
+	}
+	define('ENVIRONMENT', $env ?: (isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'production'));
 
 /*
  *---------------------------------------------------------------
@@ -66,13 +88,15 @@
 switch (ENVIRONMENT)
 {
 	case 'development':
-		error_reporting(-1);
+		// Suprimir warnings de propriedades dinâmicas (PHP 8.2+) para CodeIgniter 3
+		error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT & ~E_WARNING);
 		ini_set('display_errors', 1);
 	break;
 
 	case 'testing':
 	case 'production':
-		error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT & ~E_USER_NOTICE & ~E_USER_DEPRECATED);
+		// Em produção, suprimir todos os warnings e notices
+		error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT & ~E_USER_NOTICE & ~E_USER_DEPRECATED & ~E_WARNING);
 		ini_set('display_errors', 0);
 	break;
 

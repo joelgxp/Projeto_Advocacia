@@ -17,14 +17,55 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | environments.
 |
 */
+// Função para ler .env (compatível Laravel e CodeIgniter)
+function getConfigEnv($key, $default = '') {
+	$value = getenv($key);
+	if ($value !== false) {
+		return $value;
+	}
+	
+	$env_file = __DIR__ . '/../../.env';
+	if (file_exists($env_file)) {
+		$lines = file($env_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+		foreach ($lines as $line) {
+			$line = trim($line);
+			if (empty($line) || strpos($line, '#') === 0) {
+				continue;
+			}
+			if (strpos($line, '=') !== false) {
+				list($name, $val) = explode('=', $line, 2);
+				$name = trim($name);
+				$val = trim($val);
+				$val = trim($val, '"\'');
+				$val = preg_replace('/\$\{([^}]+)\}/', '', $val);
+				
+				// Mapeamento Laravel -> CodeIgniter
+				if ($key === 'APP_BASEURL' && $name === 'APP_URL') {
+					return rtrim($val, '/') . '/';
+				}
+				if ($key === 'APP_ENCRYPTION_KEY' && $name === 'APP_KEY') {
+					return strpos($val, 'base64:') === 0 ? substr($val, 7) : $val;
+				}
+				if ($name === $key) {
+					return $val;
+				}
+			}
+		}
+	}
+	return $default;
+}
+
 // Detectar base_url automaticamente ou usar .env
-$base_url = getenv('APP_BASEURL');
+$base_url = getConfigEnv('APP_BASEURL');
+if (empty($base_url)) {
+	$base_url = getConfigEnv('APP_URL'); // Tentar Laravel format
+}
 if (empty($base_url)) {
     $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost:8000';
     $base_url = $protocol . '://' . $host . '/';
 }
-$config['base_url'] = $base_url;
+$config['base_url'] = rtrim($base_url, '/') . '/';
 
 /*
 |--------------------------------------------------------------------------
@@ -303,7 +344,12 @@ $config['cache_query_string'] = FALSE;
 | https://codeigniter.com/user_guide/libraries/encryption.html
 |
 */
-$config['encryption_key'] = getenv('APP_ENCRYPTION_KEY') ?: '';
+// Ler encryption key (suporta Laravel APP_KEY e CodeIgniter APP_ENCRYPTION_KEY)
+$encryption_key = getConfigEnv('APP_ENCRYPTION_KEY');
+if (empty($encryption_key)) {
+	$encryption_key = getConfigEnv('APP_KEY'); // Tentar Laravel format
+}
+$config['encryption_key'] = $encryption_key;
 
 /*
 |--------------------------------------------------------------------------
