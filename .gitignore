@@ -1,45 +1,52 @@
-# Composer
+# Laravel
 /vendor/
-composer.phar
-composer.lock
+/node_modules/
+/public/hot
+/public/storage
+/storage/*.key
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+/bootstrap/cache/*
+/.phpunit.result.cache
 
 # Arquivos de ambiente
 .env
-.env.local
+.env.backup
 .env.production
+.env.local
+.env.*.local
 
-# Logs
-*.log
-logs/
-
-# Cache
-cache/
-tmp/
-
-# Arquivos temporários
-*.tmp
-*.temp
+# Composer
+composer.phar
+composer.phar.sig
 
 # IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
+*.sublime-project
+*.sublime-workspace
 
 # Sistema operacional
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini
 
-# Backup
+# Arquivos temporários
+*.tmp
+*.temp
 *.bak
 *.backup
+*.cache
 
-# Documentação (manter docs/ no git)
-# *.md
-
-# Código legado (manter para referência, mas pode ser ignorado depois)
-# legacy/
-
-# Build de produção (manter no git para facilitar deploy)
-# public/build/
+# Build (manter public/build/ no git para deploy)
+# /public/build/
 

@@ -119,15 +119,25 @@ CACHE_STORE=database
 
 ## 📦 Passo 4: Instalar Dependências
 
+**✅ RECOMENDADO: Executar Composer no Servidor**
+
 ```bash
 # No servidor
 cd ~/adv.joelsouza.com.br
 
 # Instalar dependências do Composer
 composer install --no-dev --optimize-autoloader
-
-# Se não tiver Composer no servidor, instale localmente e envie a pasta vendor/
 ```
+
+**Por que é melhor executar no servidor:**
+- ✅ Muito mais rápido (não precisa enviar milhares de arquivos)
+- ✅ Garante compatibilidade com PHP do servidor
+- ✅ Evita problemas de permissões
+- ✅ Mais seguro
+
+**Se o servidor NÃO tem Composer:**
+1. Instale o Composer no servidor (peça ao provedor ou instale via SSH)
+2. Ou como último recurso: instale localmente e envie `vendor/` (não recomendado)
 
 ---
 
