@@ -51,12 +51,16 @@ class Login extends CI_Controller {
             if ($usuario) {
                 // Criar sessão
                 $session_data = array(
-                    'usuario_id' => $usuario->id,
-                    'usuario_nome' => $usuario->nome,
-                    'usuario_email' => $usuario->email,
+                    'usuario_id' => isset($usuario->id) ? $usuario->id : null,
+                    'usuario_nome' => isset($usuario->nome) ? $usuario->nome : '',
+                    'usuario_email' => isset($usuario->email) ? $usuario->email : '',
                     'permissoes_id' => isset($usuario->permissoes_id) ? $usuario->permissoes_id : null,
                     'logged_in' => TRUE
                 );
+
+                if (!$session_data['usuario_id']) {
+                    throw new Exception('Usuário sem ID válido');
+                }
 
                 $this->session->set_userdata($session_data);
 

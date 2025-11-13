@@ -47,23 +47,34 @@ class Usuario_model extends CI_Model {
      */
     public function verificarLogin($email, $password)
     {
-        $usuario = $this->getByEmail($email);
-        
-        if (!$usuario) {
+        try {
+            $usuario = $this->getByEmail($email);
+            
+            if (!$usuario) {
+                return false;
+            }
+
+            // Verificar se está ativo (se campo existir)
+            if (isset($usuario->ativo) && !$usuario->ativo) {
+                return false;
+            }
+
+            // Verificar se tem senha
+            if (!isset($usuario->senha) || empty($usuario->senha)) {
+                log_message('error', 'Usuário sem senha: ' . $email);
+                return false;
+            }
+
+            // Verificar senha
+            if (!password_verify($password, $usuario->senha)) {
+                return false;
+            }
+
+            return $usuario;
+        } catch (Exception $e) {
+            log_message('error', 'Erro em verificarLogin: ' . $e->getMessage());
             return false;
         }
-
-        // Verificar se está ativo
-        if (!$usuario->ativo) {
-            return false;
-        }
-
-        // Verificar senha
-        if (!password_verify($password, $usuario->senha)) {
-            return false;
-        }
-
-        return $usuario;
     }
 
     /**
