@@ -16,17 +16,28 @@ class MY_Controller extends CI_Controller {
     {
         parent::__construct();
         
-        // Carregar configurações do sistema
-        $this->load->model('Configuracao_model');
-        $this->Configuracao_model->loadConfiguracoes();
+        // Carregar configurações do sistema (se tabela existir)
+        try {
+            $this->load->model('Configuracao_model');
+            if ($this->db->table_exists('configuracoes')) {
+                $this->Configuracao_model->loadConfiguracoes();
+            }
+        } catch (Exception $e) {
+            // Ignorar erro se tabela não existir
+            log_message('debug', 'Tabela configuracoes não encontrada: ' . $e->getMessage());
+        }
         
         // Verificar autenticação (exceto para Login)
         if ($this->router->class !== 'Login') {
             $this->verificar_autenticacao();
         }
         
-        // Carregar biblioteca de permissões
-        $this->load->library('Permission');
+        // Carregar biblioteca de permissões (se necessário)
+        try {
+            $this->load->library('Permission');
+        } catch (Exception $e) {
+            log_message('error', 'Erro ao carregar biblioteca Permission: ' . $e->getMessage());
+        }
         
         // Dados padrão para views
         $this->data['base_url'] = base_url();
