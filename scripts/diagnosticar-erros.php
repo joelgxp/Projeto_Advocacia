@@ -208,13 +208,14 @@ if (file_exists($envPath)) {
 
 // 5. Testar public/index.php
 echo "\n5. Testando public/index.php...\n";
-if (file_exists('public/index.php')) {
+$indexPath = $rootDir . '/public/index.php';
+if (file_exists($indexPath)) {
     echo "   ✅ Arquivo existe\n";
     
     // Verificar sintaxe
     $output = [];
     $return = 0;
-    exec("php -l public/index.php 2>&1", $output, $return);
+    exec("php -l " . escapeshellarg($indexPath) . " 2>&1", $output, $return);
     
     if ($return === 0) {
         echo "   ✅ Sintaxe PHP OK\n";
@@ -271,8 +272,9 @@ $arquivosVendor = [
 
 $arquivosFaltando = [];
 foreach ($arquivosVendor as $arquivo => $nome) {
-    if (file_exists($arquivo)) {
-        $tamanho = filesize($arquivo);
+    $arquivoPath = $rootDir . '/' . $arquivo;
+    if (file_exists($arquivoPath)) {
+        $tamanho = filesize($arquivoPath);
         echo "   ✅ $nome ($tamanho bytes)\n";
     } else {
         echo "   ❌ $nome FALTANDO: $arquivo\n";
@@ -299,7 +301,8 @@ $viewsEssenciais = [
 ];
 
 foreach ($viewsEssenciais as $view => $nome) {
-    if (file_exists($view)) {
+    $viewPath = $rootDir . '/' . $view;
+    if (file_exists($viewPath)) {
         echo "   ✅ $nome\n";
     } else {
         echo "   ❌ $nome FALTANDO: $view\n";
@@ -320,9 +323,10 @@ $pastas = [
 ];
 
 foreach ($pastas as $pasta => $nome) {
-    if (is_dir($pasta)) {
-        $perms = substr(sprintf('%o', fileperms($pasta)), -4);
-        $writable = is_writable($pasta);
+    $pastaPath = $rootDir . '/' . $pasta;
+    if (is_dir($pastaPath)) {
+        $perms = substr(sprintf('%o', fileperms($pastaPath)), -4);
+        $writable = is_writable($pastaPath);
         
         if ($writable) {
             echo "   ✅ $nome: gravável (perms: $perms)\n";
@@ -339,7 +343,7 @@ foreach ($pastas as $pasta => $nome) {
 
 // 9. Verificar logs de erro recentes
 echo "\n9. Verificando logs de erro...\n";
-$logFile = 'storage/logs/laravel.log';
+$logFile = $rootDir . '/storage/logs/laravel.log';
 if (file_exists($logFile)) {
     $logSize = filesize($logFile);
     echo "   Arquivo de log existe ($logSize bytes)\n";
