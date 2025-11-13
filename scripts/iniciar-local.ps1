@@ -51,6 +51,29 @@ if (-not (Test-Path "system/core/CodeIgniter.php")) {
     Write-Host "✅ CodeIgniter instalado!" -ForegroundColor Green
 }
 
+# Criar diretórios necessários
+Write-Host "📁 Criando diretórios necessários..." -ForegroundColor Cyan
+$dirs = @("application/logs", "application/cache", "application/sessions")
+foreach ($dir in $dirs) {
+    if (-not (Test-Path $dir)) {
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+        Write-Host "   ✅ Criado: $dir" -ForegroundColor Green
+    }
+}
+
+# Criar diretório webfonts se necessário
+if (-not (Test-Path "public/css/webfonts")) {
+    New-Item -ItemType Directory -Path "public/css/webfonts" -Force | Out-Null
+    Write-Host "   ✅ Criado: public/css/webfonts" -ForegroundColor Green
+}
+
+# Copiar fontes se necessário
+if ((Test-Path "public/fonts/fontawesome") -and -not (Test-Path "public/css/webfonts/fa-solid-900.woff2")) {
+    Write-Host "   📋 Copiando fontes do Font Awesome..." -ForegroundColor Cyan
+    Copy-Item "public/fonts/fontawesome/*" -Destination "public/css/webfonts/" -Force -ErrorAction SilentlyContinue
+    Write-Host "   ✅ Fontes copiadas" -ForegroundColor Green
+}
+
 # Verificar porta
 $port = 8000
 Write-Host ""
@@ -60,6 +83,6 @@ Write-Host ""
 Write-Host "Pressione Ctrl+C para parar o servidor" -ForegroundColor Yellow
 Write-Host ""
 
-# Iniciar servidor
-php -S localhost:$port
+# Iniciar servidor (CodeIgniter precisa do DocumentRoot na raiz)
+php -S localhost:$port -t .
 

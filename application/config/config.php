@@ -243,7 +243,8 @@ $config['directory_trigger'] = 'd';
 | your log files will fill up very fast.
 |
 */
-$config['log_threshold'] = (ENVIRONMENT === 'production') ? 1 : 4;
+// Em produção, logar erros e warnings. Em desenvolvimento, logar tudo
+$config['log_threshold'] = (ENVIRONMENT === 'production') ? 2 : 4; // 2 = Warnings e Errors
 
 /*
 |--------------------------------------------------------------------------

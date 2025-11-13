@@ -35,11 +35,15 @@ class Login extends CI_Controller {
     public function processar()
     {
         try {
+            // Log de debug
+            log_message('debug', 'Login processar chamado. POST: ' . json_encode($this->input->post()));
+            
             // Aceitar tanto 'email' quanto 'usuario' no formulário
             $this->form_validation->set_rules('usuario', 'Usuário/Email', 'required');
             $this->form_validation->set_rules('senha', 'Senha', 'required');
 
             if ($this->form_validation->run() == FALSE) {
+                log_message('debug', 'Validação falhou: ' . validation_errors());
                 $this->index();
                 return;
             }
@@ -47,8 +51,12 @@ class Login extends CI_Controller {
             // Tentar pegar 'usuario' primeiro, depois 'email' (compatibilidade)
             $usuario_input = $this->input->post('usuario') ?: $this->input->post('email');
             $senha = $this->input->post('senha');
+            
+            log_message('debug', 'Tentando login para: ' . $usuario_input);
 
             $usuario = $this->Usuario_model->verificarLogin($usuario_input, $senha);
+            
+            log_message('debug', 'Resultado verificarLogin: ' . ($usuario ? 'SUCESSO' : 'FALHOU'));
 
             if ($usuario) {
                 // Criar sessão
@@ -62,15 +70,21 @@ class Login extends CI_Controller {
                 );
 
                 if (!$session_data['usuario_id']) {
+                    log_message('error', 'Usuário sem ID válido após login');
                     throw new Exception('Usuário sem ID válido');
                 }
 
+                log_message('debug', 'Criando sessão: ' . json_encode($session_data));
+                
                 $this->session->set_userdata($session_data);
+                
+                log_message('debug', 'Sessão criada. Redirecionando...');
 
                 // Redirecionar baseado no role
                 $this->redirecionarPorRole();
             } else {
-                $this->session->set_flashdata('error', 'Email ou senha incorretos.');
+                log_message('warning', 'Login falhou para: ' . $usuario_input);
+                $this->session->set_flashdata('error', 'Usuário ou senha incorretos.');
                 redirect('login');
             }
         } catch (Exception $e) {
