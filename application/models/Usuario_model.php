@@ -27,13 +27,19 @@ class Usuario_model extends CI_Model {
     }
 
     /**
-     * Busca usuário por email
+     * Busca usuário por email ou usuario
      * 
      * @param string $email
      * @return object|null
      */
     public function getByEmail($email)
     {
+        // Tentar primeiro por 'usuario', depois por 'email' (compatibilidade)
+        $query = $this->db->where('usuario', $email)->get('usuarios');
+        if ($query->num_rows() > 0) {
+            return $query->row();
+        }
+        // Se não encontrar, tentar por 'email' (caso a coluna exista)
         $query = $this->db->where('email', $email)->get('usuarios');
         return $query->row();
     }
@@ -41,14 +47,14 @@ class Usuario_model extends CI_Model {
     /**
      * Verifica credenciais de login
      * 
-     * @param string $email
+     * @param string $usuario_input Usuário ou email
      * @param string $password
      * @return object|false
      */
-    public function verificarLogin($email, $password)
+    public function verificarLogin($usuario_input, $password)
     {
         try {
-            $usuario = $this->getByEmail($email);
+            $usuario = $this->getByEmail($usuario_input);
             
             if (!$usuario) {
                 return false;
@@ -61,12 +67,26 @@ class Usuario_model extends CI_Model {
 
             // Verificar se tem senha
             if (!isset($usuario->senha) || empty($usuario->senha)) {
-                log_message('error', 'Usuário sem senha: ' . $email);
+                log_message('error', 'Usuário sem senha: ' . $usuario_input);
                 return false;
             }
 
-            // Verificar senha
-            if (!password_verify($password, $usuario->senha)) {
+            // Verificar senha (pode ser hash bcrypt ou md5 antigo)
+            $senha_valida = false;
+            
+            // Tentar password_verify primeiro (bcrypt)
+            if (password_verify($password, $usuario->senha)) {
+                $senha_valida = true;
+            }
+            // Se não funcionar, tentar md5 (compatibilidade com sistema antigo)
+            elseif (md5($password) === $usuario->senha) {
+                $senha_valida = true;
+                // Atualizar para bcrypt
+                $this->db->where('id', $usuario->id)
+                         ->update('usuarios', array('senha' => password_hash($password, PASSWORD_DEFAULT)));
+            }
+            
+            if (!$senha_valida) {
                 return false;
             }
 

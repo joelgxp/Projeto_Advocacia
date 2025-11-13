@@ -36,18 +36,18 @@
 
                         <form method="POST" action="<?php echo base_url('login/processar'); ?>">
                             <div class="mb-4">
-                                <label for="email" class="form-label">E-mail</label>
+                                <label for="usuario" class="form-label">Usuário/E-mail</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light border-end-0">
-                                        <i class="fas fa-envelope text-muted"></i>
+                                        <i class="fas fa-user text-muted"></i>
                                     </span>
-                                    <input type="email" 
+                                    <input type="text" 
                                            class="form-control border-start-0" 
-                                           id="email" 
-                                           name="email" 
+                                           id="usuario" 
+                                           name="usuario" 
                                            required 
                                            autofocus
-                                           placeholder="seu@email.com">
+                                           placeholder="Seu usuário ou e-mail">
                                 </div>
                             </div>
 

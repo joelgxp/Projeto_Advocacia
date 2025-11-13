@@ -35,7 +35,8 @@ class Login extends CI_Controller {
     public function processar()
     {
         try {
-            $this->form_validation->set_rules('email', 'Email', 'required|valid_email');
+            // Aceitar tanto 'email' quanto 'usuario' no formulário
+            $this->form_validation->set_rules('usuario', 'Usuário/Email', 'required');
             $this->form_validation->set_rules('senha', 'Senha', 'required');
 
             if ($this->form_validation->run() == FALSE) {
@@ -43,17 +44,19 @@ class Login extends CI_Controller {
                 return;
             }
 
-            $email = $this->input->post('email');
+            // Tentar pegar 'usuario' primeiro, depois 'email' (compatibilidade)
+            $usuario_input = $this->input->post('usuario') ?: $this->input->post('email');
             $senha = $this->input->post('senha');
 
-            $usuario = $this->Usuario_model->verificarLogin($email, $senha);
+            $usuario = $this->Usuario_model->verificarLogin($usuario_input, $senha);
 
             if ($usuario) {
                 // Criar sessão
                 $session_data = array(
                     'usuario_id' => isset($usuario->id) ? $usuario->id : null,
                     'usuario_nome' => isset($usuario->nome) ? $usuario->nome : '',
-                    'usuario_email' => isset($usuario->email) ? $usuario->email : '',
+                    'usuario_email' => isset($usuario->usuario) ? $usuario->usuario : (isset($usuario->email) ? $usuario->email : ''),
+                    'usuario_nivel' => isset($usuario->nivel) ? strtolower($usuario->nivel) : null,
                     'permissoes_id' => isset($usuario->permissoes_id) ? $usuario->permissoes_id : null,
                     'logged_in' => TRUE
                 );
@@ -83,45 +86,63 @@ class Login extends CI_Controller {
     private function redirecionarPorRole()
     {
         try {
+            // Primeiro tentar usar 'nivel' (campo direto da tabela)
+            $nivel = $this->session->userdata('usuario_nivel');
+            
+            if ($nivel) {
+                // Mapear roles baseado no campo 'nivel'
+                $role = strtolower(trim($nivel));
+                
+                switch ($role) {
+                    case 'admin':
+                    case 'administrador':
+                        redirect('admin');
+                        return;
+                    case 'advogado':
+                        redirect('advogado');
+                        return;
+                    case 'recepcionista':
+                    case 'tesoureiro':
+                        redirect('recepcao');
+                        return;
+                    case 'cliente':
+                        redirect('cliente');
+                        return;
+                }
+            }
+            
+            // Se não tiver 'nivel', tentar usar 'permissoes_id' (sistema antigo)
             $permissoes_id = $this->session->userdata('permissoes_id');
             
-            // Se não tiver permissoes_id, redireciona para dashboard genérico
-            if (!$permissoes_id) {
-                redirect('dashboard');
-                return;
+            if ($permissoes_id) {
+                // Carregar grupo de permissões para identificar role
+                $this->load->model('Permissao_model');
+                $permissoes = $this->Permissao_model->get($permissoes_id);
+                
+                if ($permissoes && isset($permissoes->nome)) {
+                    $role = strtolower(trim($permissoes->nome));
+                    
+                    switch ($role) {
+                        case 'admin':
+                        case 'administrador':
+                            redirect('admin');
+                            return;
+                        case 'advogado':
+                            redirect('advogado');
+                            return;
+                        case 'recepcionista':
+                        case 'tesoureiro':
+                            redirect('recepcao');
+                            return;
+                        case 'cliente':
+                            redirect('cliente');
+                            return;
+                    }
+                }
             }
             
-            // Carregar grupo de permissões para identificar role
-            $this->load->model('Permissao_model');
-            $permissoes = $this->Permissao_model->get($permissoes_id);
-            
-            // Se não encontrar permissões, redireciona para dashboard
-            if (!$permissoes || !isset($permissoes->nome)) {
-                redirect('dashboard');
-                return;
-            }
-
-            // Mapear roles baseado no nome do grupo de permissões
-            $role = strtolower(trim($permissoes->nome));
-            
-            switch ($role) {
-                case 'admin':
-                case 'administrador':
-                    redirect('admin');
-                    break;
-                case 'advogado':
-                    redirect('advogado');
-                    break;
-                case 'recepcionista':
-                case 'tesoureiro':
-                    redirect('recepcao');
-                    break;
-                case 'cliente':
-                    redirect('cliente');
-                    break;
-                default:
-                    redirect('dashboard');
-            }
+            // Se não encontrou nenhum, redireciona para dashboard genérico
+            redirect('dashboard');
         } catch (Exception $e) {
             log_message('error', 'Erro ao redirecionar por role: ' . $e->getMessage());
             // Em caso de erro, redireciona para dashboard genérico
