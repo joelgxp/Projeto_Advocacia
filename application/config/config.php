@@ -474,7 +474,8 @@ $config['csrf_token_name'] = getenv('APP_CSRF_TOKEN_NAME') ?: 'csrf_test_name';
 $config['csrf_cookie_name'] = getenv('APP_CSRF_COOKIE_NAME') ?: 'csrf_cookie_name';
 $config['csrf_expire'] = getenv('APP_CSRF_EXPIRE') ?: 7200;
 $config['csrf_regenerate'] = getenv('APP_CSRF_REGENERATE') ?: TRUE;
-$config['csrf_exclude_uris'] = array();
+// Excluir login do CSRF (opcional - mais seguro manter habilitado)
+$config['csrf_exclude_uris'] = array('api/.*');
 
 /*
 |--------------------------------------------------------------------------
