@@ -14,6 +14,23 @@ Esta pasta contém scripts úteis para diagnóstico, verificação e gerenciamen
 php scripts/diagnosticar-erros.php
 ```
 
+---
+
+#### `corrigir-problemas.php`
+**Descrição:** Script que corrige automaticamente problemas comuns identificados pelo diagnóstico.
+
+**Uso:**
+```bash
+php scripts/corrigir-problemas.php
+```
+
+**O que corrige:**
+- ✅ Cria pasta `storage/framework/sessions` se não existir
+- ✅ Cria tabela `users` se não existir
+- ✅ Cria tabela `advogados` se não existir
+
+**Nota:** Execute o diagnóstico primeiro para identificar problemas, depois execute este script para corrigi-los automaticamente.
+
 **O que verifica:**
 - ✅ Carregamento do Laravel
 - ✅ Configuração do .env (todas as variáveis)
@@ -140,6 +157,7 @@ bash scripts/check-laravel-online.sh
 | Situação | Script Recomendado |
 |----------|-------------------|
 | Erros no servidor online | `diagnosticar-erros.php` |
+| Corrigir problemas identificados | `corrigir-problemas.php` |
 | Verificação rápida | `verificar-servidor.php` |
 | Teste completo | `testar-servidor.php` |
 | Ambiente local Windows | `verificar-local.ps1` |
