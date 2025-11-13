@@ -1,4 +1,4 @@
-name: Deploy via SSH
+name: Deploy CodeIgniter 3
 
 on:
   push:
@@ -6,82 +6,39 @@ on:
       - main
 
 jobs:
-  ssh-deploy:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout código
         uses: actions/checkout@v4
 
-      - name: Setup SSH with password
+      - name: Configurar SSH
         run: |
           sudo apt-get update
           sudo apt-get install -y sshpass
           mkdir -p ~/.ssh
           ssh-keyscan -p "${{ secrets.SSH_PORT }}" "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Git pull on server
+      - name: Deploy no servidor
         run: |
           sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
             "cd ${{ secrets.SSH_DIRECTORY }} && \
-            if [ ! -d .git ]; then \
-              echo 'Erro: Diretório não é um repositório Git. Verifique o caminho em SSH_DIRECTORY.'; \
-              echo 'Diretório atual:' && pwd && ls -la; \
-              exit 1; \
-            fi && \
             git fetch origin && \
-            git merge --abort 2>/dev/null || true && \
-            git reset --hard HEAD && \
-            git clean -fd && \
             git reset --hard origin/main && \
-            git pull origin main && \
-            echo 'Deploy concluído com sucesso!' && \
-            ls -la"
-      
-      - name: Validações pós-deploy (diagnóstico)
+            git clean -fd && \
+            echo '✅ Deploy concluído!'"
+
+      - name: Verificar deploy
         if: always()
         continue-on-error: true
         run: |
-          echo "=========================================="
-          echo "  DIAGNÓSTICO SIMPLES PÓS-DEPLOY"
-          echo "=========================================="
-          
           sshpass -p "${{ secrets.SSH_PASSPHRASE }}" ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
             "cd ${{ secrets.SSH_DIRECTORY }} && \
-            echo '1. APP_KEY configurado:' && \
-            grep '^APP_KEY=' .env | grep -v '^APP_KEY=$' && echo '  ✅ OK' || echo '  ❌ NÃO configurado' && \
+            echo '📋 Verificando arquivos essenciais...' && \
+            [ -f index.php ] && echo '✅ index.php' || echo '❌ index.php' && \
+            [ -f application/config/config.php ] && echo '✅ config.php' || echo '❌ config.php' && \
+            [ -f application/config/database.php ] && echo '✅ database.php' || echo '❌ database.php' && \
+            [ -d system ] && echo '✅ system/' || echo '❌ system/' && \
+            [ -d application ] && echo '✅ application/' || echo '❌ application/' && \
             echo '' && \
-            echo '2. Arquivos essenciais:' && \
-            ls -la public/index.php vendor/autoload.php bootstrap/app.php .env 2>&1 | grep -E 'index.php|autoload.php|app.php|\.env' && \
-            echo '  ✅ Todos os arquivos existem' && \
-            echo '' && \
-            echo '3. Testando conexão MySQL:' && \
-            DB_HOST=\$(grep '^DB_HOST=' .env | cut -d= -f2) && \
-            DB_USERNAME=\$(grep '^DB_USERNAME=' .env | cut -d= -f2) && \
-            DB_PASSWORD=\$(grep '^DB_PASSWORD=' .env | cut -d= -f2 | sed \"s/'//g\" | sed 's/\"//g') && \
-            DB_DATABASE=\$(grep '^DB_DATABASE=' .env | cut -d= -f2) && \
-            timeout 2 mysql -h\$DB_HOST -u\$DB_USERNAME -p\"\$DB_PASSWORD\" \$DB_DATABASE -e 'SELECT COUNT(*) as total_tabelas FROM information_schema.tables WHERE table_schema=\"\$DB_DATABASE\";' 2>&1 | tail -1 && \
-            echo '  ✅ MySQL conectado e tabelas encontradas' || echo '  ❌ Erro na conexão MySQL' && \
-            echo '' && \
-            echo '4. Testando sintaxe PHP:' && \
-            php -l public/index.php && \
-            echo '  ✅ Sintaxe OK' && \
-            echo '' && \
-            echo '5. Testando se o PHP consegue executar (timeout 2s):' && \
-            timeout 2 php -r \"require __DIR__.'/vendor/autoload.php'; echo 'PHP funciona!\n';\" 2>&1 || echo '  ❌ Erro ao executar PHP' && \
-            echo '' && \
-            echo '6. Permissões (storage e bootstrap/cache):' && \
-            ls -ld storage bootstrap/cache && \
-            echo '' && \
-            echo '7. Últimos logs de erro (se existir):' && \
-            if [ -f storage/logs/laravel.log ]; then \
-              tail -20 storage/logs/laravel.log; \
-            else \
-              echo '  Sem logs de erro'; \
-            fi && \
-            echo '' && \
-            echo '=========================================' && \
-            echo '  RESUMO' && \
-            echo '=========================================' && \
-            echo 'Arquivos: OK | MySQL: OK | PHP: OK' && \
-            echo 'Acesse: https://adv.joelsouza.com.br' && \
-            echo '========================================'" || echo "⚠️ Erro ao executar diagnóstico"
+            echo '✅ Deploy verificado!'"
