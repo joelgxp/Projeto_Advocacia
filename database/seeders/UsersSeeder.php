@@ -70,3 +70,4 @@ class UsersSeeder extends Seeder
 
 
 
+

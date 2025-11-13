@@ -4,7 +4,7 @@ Sistema moderno desenvolvido com Laravel 10 para gerenciamento completo de escri
 
 ## 🚀 Tecnologias
 
-- **Laravel 10.49.1**
+- **Laravel 10**
 - **PHP 8.2+**
 - **MySQL**
 - **Bootstrap 5**

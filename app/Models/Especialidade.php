@@ -40,3 +40,4 @@ class Especialidade extends Model
 
 
 
+
