@@ -18,10 +18,21 @@ $avisos = [];
 $sucessos = [];
 $detalhes = [];
 
+// Detectar raiz do projeto (subir um nível se estiver em scripts/)
+$rootDir = __DIR__;
+if (basename($rootDir) === 'scripts') {
+    $rootDir = dirname($rootDir);
+}
+
+// Mudar para o diretório raiz
+chdir($rootDir);
+
 // 1. Verificar se estamos no diretório correto
 echo "1. Verificando diretório...\n";
 $dirAtual = getcwd();
 echo "   Diretório atual: $dirAtual\n";
+echo "   Script em: " . __DIR__ . "\n";
+echo "   Raiz detectada: $rootDir\n";
 
 if (!file_exists('public/index.php')) {
     echo "   ❌ ERRO: public/index.php não encontrado!\n";
@@ -34,18 +45,20 @@ echo "   ✅ Diretório correto\n\n";
 // 2. Testar carregamento do Laravel
 echo "2. Testando carregamento do Laravel...\n";
 try {
-    if (!file_exists('vendor/autoload.php')) {
-        throw new Exception("vendor/autoload.php não encontrado");
+    $vendorPath = $rootDir . '/vendor/autoload.php';
+    if (!file_exists($vendorPath)) {
+        throw new Exception("vendor/autoload.php não encontrado em: $vendorPath");
     }
     
-    require __DIR__ . '/vendor/autoload.php';
+    require $vendorPath;
     echo "   ✅ vendor/autoload.php carregado\n";
     
-    if (!file_exists('bootstrap/app.php')) {
-        throw new Exception("bootstrap/app.php não encontrado");
+    $bootstrapPath = $rootDir . '/bootstrap/app.php';
+    if (!file_exists($bootstrapPath)) {
+        throw new Exception("bootstrap/app.php não encontrado em: $bootstrapPath");
     }
     
-    $app = require_once __DIR__ . '/bootstrap/app.php';
+    $app = require_once $bootstrapPath;
     echo "   ✅ Laravel carregado com sucesso\n";
     $sucessos[] = "Laravel carregado";
     
