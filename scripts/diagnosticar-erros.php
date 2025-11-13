@@ -83,9 +83,10 @@ try {
 
 // 3. Verificar .env detalhadamente
 echo "\n3. Verificando .env...\n";
-if (file_exists('.env')) {
+$envPath = $rootDir . '/.env';
+if (file_exists($envPath)) {
     echo "   ✅ Arquivo .env existe\n";
-    $envContent = file_get_contents('.env');
+    $envContent = file_get_contents($envPath);
     $envLines = explode("\n", $envContent);
     
     // Verificar cada variável importante
@@ -130,8 +131,8 @@ if (file_exists('.env')) {
 
 // 4. Testar conexão com banco detalhadamente
 echo "\n4. Testando conexão com banco de dados...\n";
-if (file_exists('.env')) {
-    $envLines = file('.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+if (file_exists($envPath)) {
+    $envLines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     $dbConfig = [];
     foreach ($envLines as $line) {
         if (strpos($line, 'DB_') === 0 && strpos($line, '=') !== false && strpos($line, '#') !== 0) {
