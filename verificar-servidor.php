@@ -38,7 +38,6 @@ foreach ($extensoes as $ext) {
 // 3. Verificar arquivos essenciais
 echo "\n3. Verificando arquivos essenciais...\n";
 $arquivos = [
-    'artisan' => 'Arquivo artisan',
     'composer.json' => 'composer.json',
     'public/index.php' => 'public/index.php',
     'public/css/vendor/bootstrap.min.css' => 'Bootstrap CSS',
@@ -70,7 +69,7 @@ if (file_exists('.env')) {
         $sucessos[] = "APP_KEY configurado";
     } else {
         echo "   ✗ APP_KEY não configurado\n";
-        $avisos[] = "APP_KEY não configurado. Execute: php artisan key:generate";
+        $avisos[] = "APP_KEY não configurado. Execute: php -r \"echo 'base64:' . base64_encode(random_bytes(32)) . PHP_EOL;\"";
     }
     
     if (strpos($envContent, 'APP_ENV=production') !== false) {

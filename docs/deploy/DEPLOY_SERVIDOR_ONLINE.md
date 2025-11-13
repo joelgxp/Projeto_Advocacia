@@ -59,10 +59,11 @@ FILESYSTEM_DISK=local
 API_CNJ_KEY=sua_chave_aqui
 ```
 
-**⚠️ IMPORTANTE**: Gere a APP_KEY:
+**⚠️ IMPORTANTE**: Gere a APP_KEY (SEM ARTISAN):
 ```bash
 php -r "echo 'base64:' . base64_encode(random_bytes(32)) . PHP_EOL;"
 ```
+Copie o resultado e cole no `.env` na linha `APP_KEY=`
 
 ### Passo 3: Enviar Arquivos para o Servidor
 
@@ -76,7 +77,7 @@ php -r "echo 'base64:' . base64_encode(random_bytes(32)) . PHP_EOL;"
 - ✅ `public/` (com todos os arquivos vendor: css/vendor, js/vendor, fonts/)
 - ✅ `vendor/` (dependências Composer)
 - ✅ `app/`, `config/`, `database/`, `resources/`, `routes/`
-- ✅ `artisan`, `composer.json`, `composer.lock`
+- ✅ `composer.json`, `composer.lock`
 - ✅ `.htaccess` (se houver)
 
 ### Passo 4: Configurar no Servidor
@@ -144,34 +145,36 @@ cp .env.example .env
 nano .env
 # Configure: APP_URL, DB_*, etc.
 
-# 4. Gerar APP_KEY (se não gerou localmente)
-php artisan key:generate
+# 4. Gerar APP_KEY (SEM ARTISAN)
+php -r "echo 'base64:' . base64_encode(random_bytes(32)) . PHP_EOL;"
+# Cole o resultado no .env na linha APP_KEY=
 
 # 5. Instalar dependências (se não enviou vendor/)
 composer install --no-dev --optimize-autoloader
 
-# 6. Executar migrations
-php artisan migrate --force
+# 6. Importar banco de dados (ao invés de migrate)
+# Via phpMyAdmin: Importe database/sql/advocacia.sql
+# Ou via terminal:
+mysql -u usuario -p nome_banco < database/sql/advocacia.sql
 
-# 7. Popular banco (opcional)
-php artisan db:seed --force
-
-# 8. Configurar permissões
+# 7. Configurar permissões
 chmod -R 775 storage bootstrap/cache
 chown -R www-data:www-data storage bootstrap/cache
 
-# 9. Gerar cache
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+# 8. Limpar cache manualmente (SEM ARTISAN)
+rm -f bootstrap/cache/*.php
 ```
 
 #### Via Painel (cPanel/File Manager):
 
 1. **Criar .env**: Copie `env.example` e renomeie para `.env`
 2. **Editar .env**: Use o editor de arquivos do painel
-3. **Permissões**: Via File Manager, defina permissões 755 para pastas e 644 para arquivos
-4. **Terminal**: Se tiver Terminal no cPanel, execute os comandos acima
+   - Configure: `APP_URL`, `DB_*`, etc.
+   - Gere APP_KEY: Use o Terminal do cPanel: `php -r "echo 'base64:' . base64_encode(random_bytes(32)) . PHP_EOL;"`
+   - Cole o resultado no `.env` na linha `APP_KEY=`
+3. **Permissões**: Via File Manager, defina permissões 775 para `storage/` e `bootstrap/cache/`
+4. **Importar Banco**: Via phpMyAdmin, importe `database/sql/advocacia.sql`
+5. **Limpar Cache**: Via File Manager, delete arquivos em `bootstrap/cache/*.php`
 
 ### Passo 6: Importar Banco de Dados
 
@@ -206,21 +209,21 @@ cd Projeto_Advocacia
 composer install --no-dev --optimize-autoloader
 
 # Configurar .env
-cp .env.example .env
+cp env.example .env
 nano .env  # Configure as variáveis
 
-# Gerar chave
-php artisan key:generate
+# Gerar APP_KEY (SEM ARTISAN)
+php -r "echo 'base64:' . base64_encode(random_bytes(32)) . PHP_EOL;"
+# Cole o resultado no .env na linha APP_KEY=
 
-# Migrations
-php artisan migrate --force
+# Importar banco (ao invés de migrate)
+mysql -u usuario -p nome_banco < database/sql/advocacia.sql
 
 # Permissões
 chmod -R 775 storage bootstrap/cache
 
-# Cache
-php artisan config:cache
-php artisan route:cache
+# Limpar cache (SEM ARTISAN)
+rm -f bootstrap/cache/*.php
 ```
 
 ### Passo 3: Atualizações Futuras
@@ -229,9 +232,12 @@ php artisan route:cache
 # No servidor
 git pull origin main
 composer install --no-dev --optimize-autoloader
-php artisan migrate --force
-php artisan config:cache
-php artisan route:cache
+
+# Se houver novas migrations, importe o SQL atualizado
+# mysql -u usuario -p nome_banco < database/sql/advocacia.sql
+
+# Limpar cache (SEM ARTISAN)
+rm -f bootstrap/cache/*.php
 ```
 
 ---
@@ -275,7 +281,11 @@ chown -R www-data:www-data storage bootstrap/cache
 
 # Verificar .env
 cat .env | grep APP_KEY
-# Se estiver vazio, gere: php artisan key:generate
+# Se estiver vazio, gere: php -r "echo 'base64:' . base64_encode(random_bytes(32)) . PHP_EOL;"
+# Cole o resultado no .env na linha APP_KEY=
+
+# Limpar cache
+rm -f bootstrap/cache/*.php
 ```
 
 ### Assets não carregam (404)
@@ -290,7 +300,9 @@ cat .env | grep APP_KEY
 
 **Solução**:
 ```bash
-php artisan key:generate
+# Gerar APP_KEY (SEM ARTISAN)
+php -r "echo 'base64:' . base64_encode(random_bytes(32)) . PHP_EOL;"
+# Cole o resultado no .env na linha APP_KEY=
 ```
 
 ### Erro de Conexão com Banco
@@ -300,16 +312,16 @@ php artisan key:generate
 - `DB_DATABASE` (nome do banco)
 - `DB_USERNAME` e `DB_PASSWORD` (credenciais corretas)
 
-### Artisan não funciona
+### Limpar Cache (SEM ARTISAN)
 
-**Em servidores compartilhados**, alguns comandos podem não funcionar. Use alternativas:
+**Como não usamos artisan**, limpe o cache manualmente:
 
 ```bash
-# Ao invés de: php artisan migrate
-# Importe o SQL diretamente via phpMyAdmin
+# Limpar cache de configuração
+rm -f bootstrap/cache/*.php
 
-# Ao invés de: php artisan config:cache
-# Limpe manualmente: rm bootstrap/cache/*.php
+# Limpar cache de views (se houver)
+rm -rf storage/framework/views/*
 ```
 
 ---
@@ -375,16 +387,18 @@ Se encontrar problemas:
 ```bash
 # 1. Local: Preparar
 composer install --no-dev --optimize-autoloader
+Remove-Item bootstrap/cache/*.php -Force
 
 # 2. Enviar arquivos para servidor (FTP/Git)
 
 # 3. Servidor: Configurar
-cp .env.example .env
+cp env.example .env
 # Editar .env
-php artisan key:generate
-php artisan migrate --force
+php -r "echo 'base64:' . base64_encode(random_bytes(32)) . PHP_EOL;"
+# Cole o resultado no .env na linha APP_KEY=
+mysql -u usuario -p nome_banco < database/sql/advocacia.sql
 chmod -R 775 storage bootstrap/cache
-php artisan config:cache
+rm -f bootstrap/cache/*.php
 ```
 
 **Pronto!** Seu sistema está no ar! 🚀

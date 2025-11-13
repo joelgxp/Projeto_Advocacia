@@ -31,13 +31,18 @@ composer install --no-dev --optimize-autoloader
 #### Via SSH:
 ```bash
 cd /caminho/para/projeto
-cp .env.example .env
+cp env.example .env
 nano .env  # Configure: APP_URL, DB_*, etc.
-php artisan key:generate
-php artisan migrate --force
+
+# Gerar APP_KEY (sem artisan)
+php -r "echo 'base64:' . base64_encode(random_bytes(32)) . PHP_EOL;"
+# Cole o resultado no .env na linha APP_KEY=
+
+# Limpar cache manualmente
+rm -f bootstrap/cache/*.php
+
+# Configurar permissões
 chmod -R 775 storage bootstrap/cache
-php artisan config:cache
-php artisan route:cache
 ```
 
 #### Via Painel (cPanel):
@@ -87,7 +92,7 @@ APP_NAME="Sistema de Advocacia"
 APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://seudominio.com.br
-APP_KEY=base64:GERAR_COM_php_artisan_key:generate
+APP_KEY=base64:GERAR_COM_php_-r_"echo_'base64:'_._base64_encode(random_bytes(32))_._PHP_EOL;"
 
 DB_CONNECTION=mysql
 DB_HOST=localhost
@@ -103,17 +108,24 @@ DB_PASSWORD=senha_banco
 
 ### Erro 500
 ```bash
+# Limpar cache manualmente
+rm -f bootstrap/cache/*.php
+
+# Configurar permissões
 chmod -R 775 storage bootstrap/cache
-php artisan key:generate
+
+# Verificar APP_KEY no .env
+# Se estiver vazio, gere: php -r "echo 'base64:' . base64_encode(random_bytes(32)) . PHP_EOL;"
 ```
 
 ### Assets 404
 - Verifique se DocumentRoot aponta para `public/`
 - Verifique se `public/css/vendor/` existe
+- Verifique permissões: `chmod -R 755 public/`
 
 ### Erro de Banco
 - Verifique credenciais no `.env`
-- Teste conexão: `php artisan tinker` → `DB::connection()->getPdo();`
+- Teste conexão via phpMyAdmin ou cliente MySQL
 
 ---
 
