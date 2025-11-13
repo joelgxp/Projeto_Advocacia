@@ -47,5 +47,4 @@
     </div>
 <?php endif; ?>
 
-
 <?php /**PATH C:\Users\joelv\OneDrive\Documentos\Repositorios\Projeto_Advocacia\resources\views/layouts/partials/flash-messages.blade.php ENDPATH**/ ?>

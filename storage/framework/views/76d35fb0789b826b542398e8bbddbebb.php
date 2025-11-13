@@ -9,44 +9,54 @@
     <title><?php echo $__env->yieldContent('title', config('app.name')); ?></title>
     
     <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <link href="<?php echo e(asset('css/vendor/inter-font.css')); ?>" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="<?php echo e(asset('css/vendor/bootstrap.min.css')); ?>" rel="stylesheet">
     
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="<?php echo e(asset('css/vendor/fontawesome.min.css')); ?>" rel="stylesheet">
     
-    <!-- Styles -->
-    <?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css']); ?>
+    <!-- Custom Styles -->
+    <link href="<?php echo e(asset('css/style-painel.css')); ?>" rel="stylesheet">
     <?php echo $__env->yieldPushContent('styles'); ?>
 </head>
-<body>
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <?php echo $__env->make('layouts.partials.sidebar', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+<body class="modern-layout">
+    <div class="app-wrapper">
+        <!-- Sidebar -->
+        <?php echo $__env->make('layouts.partials.sidebar', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+        
+        <!-- Main Content -->
+        <div class="main-content-wrapper">
+            <!-- Header -->
+            <?php echo $__env->make('layouts.partials.header', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
             
-            <!-- Main Content -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
-                <!-- Header -->
-                <?php echo $__env->make('layouts.partials.header', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
-                
-                <!-- Flash Messages -->
-                <?php echo $__env->make('layouts.partials.flash-messages', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
-                
-                <!-- Page Content -->
+            <!-- Flash Messages -->
+            <?php echo $__env->make('layouts.partials.flash-messages', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+            
+            <!-- Page Content -->
+            <div class="content-area">
                 <?php echo $__env->yieldContent('content'); ?>
-            </main>
+            </div>
         </div>
     </div>
     
     <!-- Toast Container -->
-    <div class="toast-container"></div>
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
     
-    <!-- Scripts -->
-    <?php echo app('Illuminate\Foundation\Vite')(['resources/js/app.js']); ?>
+    <!-- jQuery (deve vir antes do Bootstrap) -->
+    <script src="<?php echo e(asset('js/vendor/jquery.min.js')); ?>"></script>
+    
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="<?php echo e(asset('js/vendor/bootstrap.bundle.min.js')); ?>"></script>
+    
+    <!-- Custom Scripts -->
+    <script src="<?php echo e(asset('js/script.js')); ?>"></script>
+    <script src="<?php echo e(asset('js/mascaras.js')); ?>"></script>
     <?php echo $__env->yieldPushContent('scripts'); ?>
 </body>
 </html>
+
 
 
 <?php /**PATH C:\Users\joelv\OneDrive\Documentos\Repositorios\Projeto_Advocacia\resources\views/layouts/app.blade.php ENDPATH**/ ?>

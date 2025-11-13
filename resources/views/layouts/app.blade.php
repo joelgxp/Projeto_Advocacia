@@ -9,47 +9,46 @@
     <title>@yield('title', config('app.name'))</title>
     
     <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <link href="{{ asset('css/vendor/inter-font.css') }}" rel="stylesheet">
     
     <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link href="{{ asset('css/vendor/bootstrap.min.css') }}" rel="stylesheet">
     
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="{{ asset('css/vendor/fontawesome.min.css') }}" rel="stylesheet">
     
     <!-- Custom Styles -->
     <link href="{{ asset('css/style-painel.css') }}" rel="stylesheet">
     @stack('styles')
 </head>
-<body>
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            @include('layouts.partials.sidebar')
+<body class="modern-layout">
+    <div class="app-wrapper">
+        <!-- Sidebar -->
+        @include('layouts.partials.sidebar')
+        
+        <!-- Main Content -->
+        <div class="main-content-wrapper">
+            <!-- Header -->
+            @include('layouts.partials.header')
             
-            <!-- Main Content -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
-                <!-- Header -->
-                @include('layouts.partials.header')
-                
-                <!-- Flash Messages -->
-                @include('layouts.partials.flash-messages')
-                
-                <!-- Page Content -->
+            <!-- Flash Messages -->
+            @include('layouts.partials.flash-messages')
+            
+            <!-- Page Content -->
+            <div class="content-area">
                 @yield('content')
-            </main>
+            </div>
         </div>
     </div>
     
     <!-- Toast Container -->
-    <div class="toast-container"></div>
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
+    
+    <!-- jQuery (deve vir antes do Bootstrap) -->
+    <script src="{{ asset('js/vendor/jquery.min.js') }}"></script>
     
     <!-- Bootstrap 5 JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
-    
-    <!-- jQuery (se necessário) -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="{{ asset('js/vendor/bootstrap.bundle.min.js') }}"></script>
     
     <!-- Custom Scripts -->
     <script src="{{ asset('js/script.js') }}"></script>

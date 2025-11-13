@@ -1,26 +1,23 @@
 @extends('layouts.app')
 
 @section('title', 'Dashboard - Recepção')
+@section('page-title', 'Dashboard - Recepção')
 
 @section('content')
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Dashboard - Recepção</h1>
-</div>
-
-<div class="row">
+<div class="row fade-in">
     <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Bem-vindo ao Painel de Recepção</h5>
+        <div class="modern-card">
+            <div class="modern-card-header">
+                <h5 class="mb-0 text-gradient">Bem-vindo ao Painel de Recepção</h5>
             </div>
-            <div class="card-body">
-                <p>Use o menu lateral para navegar pelas funcionalidades do sistema.</p>
-                <p>Áreas disponíveis:</p>
-                <ul>
-                    <li>Gestão de Clientes</li>
-                    <li>Gestão de Processos</li>
-                    <li>Audiências</li>
-                    <li>Controle Financeiro</li>
+            <div class="modern-card-body">
+                <p class="text-muted mb-3">Use o menu lateral para navegar pelas funcionalidades do sistema.</p>
+                <p class="mb-2"><strong>Áreas disponíveis:</strong></p>
+                <ul class="list-unstyled">
+                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Gestão de Clientes</li>
+                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Gestão de Processos</li>
+                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Audiências</li>
+                    <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Controle Financeiro</li>
                 </ul>
             </div>
         </div>

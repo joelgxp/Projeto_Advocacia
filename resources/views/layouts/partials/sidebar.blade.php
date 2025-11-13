@@ -1,13 +1,12 @@
-<aside class="col-md-3 col-lg-2 sidebar p-0">
-    <div class="position-sticky pt-3">
-        <div class="text-center p-3 border-bottom">
-            <h4 class="text-white mb-0">
-                <i class="fas fa-gavel me-2"></i>
-                {{ config('app.name') }}
-            </h4>
-        </div>
-        
-        <nav class="nav flex-column p-3">
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <h4>
+            <i class="fas fa-gavel"></i>
+            {{ config('app.name') }}
+        </h4>
+    </div>
+    
+    <nav class="sidebar-nav">
             @if(auth()->check())
                 @if(auth()->user()->hasRole('admin'))
                     <a class="nav-link {{ request()->routeIs('admin.*') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">
@@ -74,16 +73,15 @@
                     </a>
                 @endif
                 
-                <hr class="my-3 text-white-50">
+                <hr class="sidebar-divider">
                 
-                <a class="nav-link" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                    <i class="fas fa-sign-out-alt me-2"></i> Sair
+                <a class="nav-link text-danger" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                    <i class="fas fa-sign-out-alt"></i> Sair
                 </a>
                 <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
                     @csrf
                 </form>
             @endif
         </nav>
-    </div>
 </aside>
 

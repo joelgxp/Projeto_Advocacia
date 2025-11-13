@@ -1,15 +1,14 @@
-<aside class="col-md-3 col-lg-2 sidebar p-0">
-    <div class="position-sticky pt-3">
-        <div class="text-center p-3 border-bottom">
-            <h4 class="text-white mb-0">
-                <i class="fas fa-gavel me-2"></i>
-                <?php echo e(config('app.name')); ?>
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <h4>
+            <i class="fas fa-gavel"></i>
+            <?php echo e(config('app.name')); ?>
 
-            </h4>
-        </div>
-        
-        <nav class="nav flex-column p-3">
-            <?php if(auth()->guard()->check()): ?>
+        </h4>
+    </div>
+    
+    <nav class="sidebar-nav">
+            <?php if(auth()->check()): ?>
                 <?php if(auth()->user()->hasRole('admin')): ?>
                     <a class="nav-link <?php echo e(request()->routeIs('admin.*') ? 'active' : ''); ?>" href="<?php echo e(route('admin.dashboard')); ?>">
                         <i class="fas fa-home me-2"></i> Dashboard
@@ -25,9 +24,6 @@
                     </a>
                     <a class="nav-link <?php echo e(request()->routeIs('admin.funcionarios.*') ? 'active' : ''); ?>" href="<?php echo e(route('admin.funcionarios.index')); ?>">
                         <i class="fas fa-user-friends me-2"></i> Funcionários
-                    </a>
-                    <a class="nav-link <?php echo e(request()->routeIs('admin.consulta-processual.*') ? 'active' : ''); ?>" href="<?php echo e(route('admin.consulta-processual.index')); ?>">
-                        <i class="fas fa-search me-2"></i> Consulta Processual
                     </a>
                 <?php elseif(auth()->user()->hasRole('advogado')): ?>
                     <a class="nav-link <?php echo e(request()->routeIs('advogado.*') ? 'active' : ''); ?>" href="<?php echo e(route('advogado.dashboard')); ?>">
@@ -78,18 +74,16 @@
                     </a>
                 <?php endif; ?>
                 
-                <hr class="my-3 text-white-50">
+                <hr class="sidebar-divider">
                 
-                <a class="nav-link" href="<?php echo e(route('logout')); ?>" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                    <i class="fas fa-sign-out-alt me-2"></i> Sair
+                <a class="nav-link text-danger" href="<?php echo e(route('logout')); ?>" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                    <i class="fas fa-sign-out-alt"></i> Sair
                 </a>
                 <form id="logout-form" action="<?php echo e(route('logout')); ?>" method="POST" style="display: none;">
                     <?php echo csrf_field(); ?>
                 </form>
             <?php endif; ?>
         </nav>
-    </div>
 </aside>
-
 
 <?php /**PATH C:\Users\joelv\OneDrive\Documentos\Repositorios\Projeto_Advocacia\resources\views/layouts/partials/sidebar.blade.php ENDPATH**/ ?>

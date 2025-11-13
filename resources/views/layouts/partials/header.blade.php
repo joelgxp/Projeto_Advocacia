@@ -1,20 +1,21 @@
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <div>
-        <h1 class="h2">@yield('page-title', 'Dashboard')</h1>
-    </div>
-    <div class="btn-toolbar mb-2 mb-md-0">
+<div class="modern-header">
+    <div class="modern-header-content">
+        <div>
+            <h1 class="mb-0">@yield('page-title', 'Dashboard')</h1>
+        </div>
         @if(auth()->check())
         <div class="dropdown">
-            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fas fa-user me-2"></i>{{ auth()->user()->name ?? auth()->user()->email }}
+            <button class="user-menu-btn dropdown-toggle" type="button" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-user-circle"></i>
+                <span>{{ auth()->user()->name ?? auth()->user()->email }}</span>
             </button>
-            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+            <ul class="dropdown-menu dropdown-menu-end shadow-lg" aria-labelledby="userMenu" style="border-radius: 0.75rem; border: 1px solid var(--border-color);">
                 <li><h6 class="dropdown-header">{{ auth()->user()->email }}</h6></li>
                 <li><hr class="dropdown-divider"></li>
                 <li>
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf
-                        <button type="submit" class="dropdown-item">
+                        <button type="submit" class="dropdown-item" style="border-radius: 0;">
                             <i class="fas fa-sign-out-alt me-2"></i> Sair
                         </button>
                     </form>
