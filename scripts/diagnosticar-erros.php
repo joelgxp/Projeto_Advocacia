@@ -25,7 +25,10 @@ if (basename($rootDir) === 'scripts') {
 }
 
 // Mudar para o diretório raiz
-chdir($rootDir);
+if (!chdir($rootDir)) {
+    echo "❌ ERRO: Não foi possível mudar para o diretório raiz: $rootDir\n";
+    exit(1);
+}
 
 // 1. Verificar se estamos no diretório correto
 echo "1. Verificando diretório...\n";
@@ -34,8 +37,11 @@ echo "   Diretório atual: $dirAtual\n";
 echo "   Script em: " . __DIR__ . "\n";
 echo "   Raiz detectada: $rootDir\n";
 
-if (!file_exists('public/index.php')) {
+// Verificar se public/index.php existe (usando caminho absoluto)
+$indexPath = $rootDir . '/public/index.php';
+if (!file_exists($indexPath)) {
     echo "   ❌ ERRO: public/index.php não encontrado!\n";
+    echo "   Procurando em: $indexPath\n";
     echo "   Certifique-se de executar este script na raiz do projeto.\n";
     $erros[] = "Diretório incorreto - public/index.php não encontrado";
     exit(1);
@@ -45,7 +51,10 @@ echo "   ✅ Diretório correto\n\n";
 // 2. Testar carregamento do Laravel
 echo "2. Testando carregamento do Laravel...\n";
 try {
+    // Usar caminho absoluto baseado na raiz detectada
     $vendorPath = $rootDir . '/vendor/autoload.php';
+    echo "   Procurando vendor em: $vendorPath\n";
+    
     if (!file_exists($vendorPath)) {
         throw new Exception("vendor/autoload.php não encontrado em: $vendorPath");
     }
@@ -54,6 +63,8 @@ try {
     echo "   ✅ vendor/autoload.php carregado\n";
     
     $bootstrapPath = $rootDir . '/bootstrap/app.php';
+    echo "   Procurando bootstrap em: $bootstrapPath\n";
+    
     if (!file_exists($bootstrapPath)) {
         throw new Exception("bootstrap/app.php não encontrado em: $bootstrapPath");
     }
