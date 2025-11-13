@@ -46,38 +46,19 @@ php scripts/corrigir-problemas.php
 
 ---
 
-#### `verificar-servidor.php`
-**Descrição:** Verificação básica do servidor online.
+#### `diagnosticar-403.php`
+**Descrição:** Diagnóstico específico para erro 403 (Forbidden).
 
 **Uso:**
 ```bash
-php scripts/verificar-servidor.php
+php scripts/diagnosticar-403.php
 ```
 
 **O que verifica:**
-- ✅ Arquivos essenciais
-- ✅ APP_KEY
-- ✅ Conexão MySQL
-- ✅ Sintaxe PHP
-- ✅ Permissões
-
----
-
-#### `testar-servidor.php`
-**Descrição:** Teste completo do servidor.
-
-**Uso:**
-```bash
-php scripts/testar-servidor.php
-```
-
-**O que verifica:**
-- ✅ Laravel carregado
-- ✅ Configuração .env
-- ✅ Banco de dados
-- ✅ Rotas
-- ✅ Cache
-- ✅ Logs
+- ✅ Permissões de arquivos e pastas
+- ✅ Configuração do .htaccess
+- ✅ DocumentRoot do servidor
+- ✅ Estrutura do projeto
 
 ---
 
@@ -157,12 +138,11 @@ bash scripts/check-laravel-online.sh
 | Situação | Script Recomendado |
 |----------|-------------------|
 | Erros no servidor online | `diagnosticar-erros.php` |
+| Erro 403 (Forbidden) | `diagnosticar-403.php` |
 | Corrigir problemas identificados | `corrigir-problemas.php` |
-| Verificação rápida | `verificar-servidor.php` |
-| Teste completo | `testar-servidor.php` |
 | Ambiente local Windows | `verificar-local.ps1` |
 | Iniciar servidor local | `iniciar-servidor.ps1` |
-| Diagnóstico Linux/Mac | `check-server.sh` |
+| Diagnóstico completo Linux/Mac | `check-server.sh` |
 
 ## 🚀 Executando no Servidor Online
 
