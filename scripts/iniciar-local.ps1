@@ -84,27 +84,11 @@ Write-Host "Pressione Ctrl+C para parar o servidor" -ForegroundColor Yellow
 Write-Host ""
 
 # Iniciar servidor (CodeIgniter precisa do DocumentRoot na raiz)
-# Usar router personalizado para garantir que usa index.php da raiz
-Write-Host "⚠️  IMPORTANTE: O servidor usa index.php da RAIZ (CodeIgniter)" -ForegroundColor Yellow
-Write-Host "   NÃO use public/index.php (Laravel) - isso causará erros!" -ForegroundColor Yellow
+# Mesmo comportamento do servidor online - usar index.php da raiz
+Write-Host "🚀 Iniciando servidor (igual ao online)..." -ForegroundColor Cyan
+Write-Host "   Usando index.php da RAIZ (CodeIgniter)" -ForegroundColor Green
 Write-Host ""
 
-# Verificar se router.php existe
-if (-not (Test-Path "router.php")) {
-    Write-Host "❌ router.php não encontrado! Criando..." -ForegroundColor Red
-    # Criar router básico
-    @"
-<?php
-if (file_exists(__DIR__ . '/index.php')) {
-    chdir(__DIR__);
-    require __DIR__ . '/index.php';
-} else {
-    http_response_code(404);
-    echo 'index.php not found';
-}
-"@ | Out-File -FilePath "router.php" -Encoding UTF8
-}
-
-Write-Host "🚀 Iniciando servidor com router.php..." -ForegroundColor Cyan
-php -S localhost:$port router.php
+# Servidor PHP built-in com DocumentRoot na raiz (igual ao online)
+php -S localhost:$port -t .
 

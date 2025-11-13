@@ -73,7 +73,7 @@
 
                         <div class="text-center mt-3">
                             <small class="text-muted">
-                                Sistema de Gerenciamento de Advocacia
+                                Sistema de Gerenciamento de Advocacia xxx
                             </small>
                         </div>
                     </div>

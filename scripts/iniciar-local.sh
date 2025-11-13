@@ -52,10 +52,11 @@ PORT=8000
 echo ""
 echo "🌐 Iniciando servidor na porta $PORT..."
 echo "📍 Acesse: http://localhost:$PORT"
+echo "   Usando index.php da RAIZ (CodeIgniter) - igual ao online"
 echo ""
 echo "Pressione Ctrl+C para parar o servidor"
 echo ""
 
-# Iniciar servidor
-php -S localhost:$PORT
+# Iniciar servidor (DocumentRoot na raiz - igual ao online)
+php -S localhost:$PORT -t .
 

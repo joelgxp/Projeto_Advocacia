@@ -1,7 +1,16 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
     
-    # Redirecionar para index.php se não for arquivo ou diretório
+    # NÃO redirecionar para public/ - usar index.php da raiz
+    # Bloquear acesso direto a public/index.php (Laravel)
+    RewriteCond %{REQUEST_URI} ^/public/index\.php
+    RewriteRule ^(.*)$ - [F,L]
+    
+    # Servir arquivos estáticos de assets/ e public/ diretamente
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^(.*)$ - [L]
+    
+    # Redirecionar para index.php da raiz (CodeIgniter) se não for arquivo ou diretório
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^(.*)$ index.php/$1 [L]
