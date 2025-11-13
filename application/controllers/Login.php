@@ -34,11 +34,6 @@ class Login extends CI_Controller {
      */
     public function processar()
     {
-        // Verificar CSRF manualmente se necessário
-        if ($this->config->item('csrf_protection') === TRUE) {
-            $this->security->csrf_verify();
-        }
-        
         $this->form_validation->set_rules('email', 'Email', 'required|valid_email');
         $this->form_validation->set_rules('senha', 'Senha', 'required');
 

@@ -35,12 +35,6 @@
                         <?php endif; ?>
 
                         <form method="POST" action="<?php echo base_url('login/processar'); ?>">
-                            <?php
-                            // Adicionar token CSRF se estiver habilitado
-                            if ($this->config->item('csrf_protection') === TRUE) {
-                                echo '<input type="hidden" name="' . $this->security->get_csrf_token_name() . '" value="' . $this->security->get_csrf_hash() . '" />';
-                            }
-                            ?>
                             <div class="mb-4">
                                 <label for="email" class="form-label">E-mail</label>
                                 <div class="input-group">
