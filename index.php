@@ -75,6 +75,10 @@
 			}
 		}
 	}
+	// Mapear 'local' para 'development'
+	if ($env === 'local') {
+		$env = 'development';
+	}
 	define('ENVIRONMENT', $env ?: (isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'production'));
 
 /*
@@ -91,6 +95,11 @@ switch (ENVIRONMENT)
 		// Suprimir warnings de propriedades dinâmicas (PHP 8.2+) para CodeIgniter 3
 		error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT & ~E_WARNING);
 		ini_set('display_errors', 1);
+		// Desabilitar OPcache em desenvolvimento para ver mudanças imediatamente
+		if (function_exists('opcache_reset')) {
+			opcache_reset();
+		}
+		ini_set('opcache.enable', 0);
 	break;
 
 	case 'testing':

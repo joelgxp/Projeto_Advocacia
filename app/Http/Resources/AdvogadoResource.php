@@ -26,3 +26,5 @@ class AdvogadoResource extends JsonResource
 
 
 
+
+

@@ -50,3 +50,5 @@ desktop.ini
 # Build (manter public/build/ no git para deploy)
 # /public/build/
 
+docs
+

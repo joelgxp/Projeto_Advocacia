@@ -25,3 +25,5 @@ class Cargo extends Model
 
 
 
+
+

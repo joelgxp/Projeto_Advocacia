@@ -2,7 +2,20 @@
 
 ## ⚡ Início Rápido
 
-### Windows (PowerShell)
+### Método Manual (Recomendado)
+```powershell
+# 1. Configurar .env
+Copy-Item env.example .env
+notepad .env
+
+# 2. Criar banco de dados
+php scripts/criar-banco-dados.php
+
+# 3. Iniciar servidor
+php -S localhost:8000 router.php
+```
+
+### Windows (PowerShell) - Script Automatizado
 ```powershell
 .\scripts\iniciar-local.ps1
 ```
@@ -88,7 +101,7 @@ VALUES (
 ### 5. Iniciar Servidor
 
 ```bash
-php -S localhost:8000 -t .
+php -S localhost:8000 router.php
 ```
 
 ### 6. Acessar

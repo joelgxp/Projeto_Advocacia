@@ -12,10 +12,23 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Agendar jobs
-        // $schedule->command('processos:consultar-tribunais')->daily();
-        // $schedule->command('notificacoes:enviar-prazos')->daily();
-        // $schedule->command('notificacoes:enviar-audiencias')->daily();
+        // Verificar prazos vencendo diariamente às 8h
+        $schedule->command('processos:verificar-prazos')
+            ->dailyAt('08:00')
+            ->withoutOverlapping()
+            ->onOneServer();
+
+        // Limpar notificações antigas (mais de 90 dias)
+        $schedule->command('model:prune', ['--model' => 'App\\Models\\Notificacao'])
+            ->weekly()
+            ->sundays()
+            ->at('02:00');
+
+        // Backup do banco de dados (se configurado)
+        // $schedule->command('backup:run')
+        //     ->daily()
+        //     ->at('03:00')
+        //     ->onOneServer();
     }
 
     /**

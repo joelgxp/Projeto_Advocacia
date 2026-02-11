@@ -135,6 +135,39 @@ class Processo extends Model
     }
 
     /**
+     * Scope para carregar relacionamentos comuns
+     */
+    public function scopeWithRelations($query)
+    {
+        return $query->with([
+            'cliente:id,nome,tipo_pessoa',
+            'advogado:id,nome,oab',
+            'vara:id,nome',
+            'especialidade:id,nome',
+        ]);
+    }
+
+    /**
+     * Scope para processos ativos
+     */
+    public function scopeAtivos($query)
+    {
+        return $query->where('status', ProcessoStatus::ANDAMENTO);
+    }
+
+    /**
+     * Scope para processos com prazos vencendo
+     */
+    public function scopeComPrazosVencendo($query, int $dias = 7)
+    {
+        return $query->whereHas('prazos', function ($q) use ($dias) {
+            $q->where('data_vencimento', '<=', now()->addDays($dias))
+              ->where('data_vencimento', '>=', now())
+              ->whereNull('data_cumprimento');
+        });
+    }
+
+    /**
      * Accessor para status label
      */
     public function getStatusLabelAttribute(): ?string

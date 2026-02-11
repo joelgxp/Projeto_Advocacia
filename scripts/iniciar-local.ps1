@@ -51,6 +51,13 @@ if (-not (Test-Path "system/core/CodeIgniter.php")) {
     Write-Host "✅ CodeIgniter instalado!" -ForegroundColor Green
 }
 
+# Limpar cache antes de iniciar
+Write-Host "🧹 Limpando cache..." -ForegroundColor Cyan
+if (Test-Path "application/cache") {
+    Get-ChildItem "application/cache" -File | Remove-Item -Force -ErrorAction SilentlyContinue
+    Write-Host "   ✅ Cache limpo" -ForegroundColor Green
+}
+
 # Criar diretórios necessários
 Write-Host "📁 Criando diretórios necessários..." -ForegroundColor Cyan
 $dirs = @("application/logs", "application/cache", "application/sessions")
@@ -65,13 +72,6 @@ foreach ($dir in $dirs) {
 if (-not (Test-Path "public/css/webfonts")) {
     New-Item -ItemType Directory -Path "public/css/webfonts" -Force | Out-Null
     Write-Host "   ✅ Criado: public/css/webfonts" -ForegroundColor Green
-}
-
-# Copiar fontes se necessário
-if ((Test-Path "public/fonts/fontawesome") -and -not (Test-Path "public/css/webfonts/fa-solid-900.woff2")) {
-    Write-Host "   📋 Copiando fontes do Font Awesome..." -ForegroundColor Cyan
-    Copy-Item "public/fonts/fontawesome/*" -Destination "public/css/webfonts/" -Force -ErrorAction SilentlyContinue
-    Write-Host "   ✅ Fontes copiadas" -ForegroundColor Green
 }
 
 # Verificar porta
@@ -89,6 +89,5 @@ Write-Host "🚀 Iniciando servidor (igual ao online)..." -ForegroundColor Cyan
 Write-Host "   Usando index.php da RAIZ (CodeIgniter)" -ForegroundColor Green
 Write-Host ""
 
-# Servidor PHP built-in com DocumentRoot na raiz (igual ao online)
-php -S localhost:$port -t .
-
+# Servidor PHP built-in com router.php para servir assets corretamente
+php -S localhost:$port router.php

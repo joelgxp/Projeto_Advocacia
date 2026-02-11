@@ -11,6 +11,14 @@ class Login extends CI_Controller {
     public function __construct()
     {
         parent::__construct();
+        
+        // Em desenvolvimento, desabilitar cache
+        if (ENVIRONMENT === 'development') {
+            header('Cache-Control: no-cache, no-store, must-revalidate');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+        }
+        
         $this->load->model('Usuario_model');
         $this->load->library('form_validation');
     }

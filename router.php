@@ -9,34 +9,38 @@ $requestUri = $_SERVER['REQUEST_URI'];
 $parsedUrl = parse_url($requestUri);
 $path = isset($parsedUrl['path']) ? $parsedUrl['path'] : '/';
 
+// Remover query string do path para verificação
+$pathWithoutQuery = $path;
+
 // Verificar se é um arquivo estático
 $staticExtensions = ['css', 'js', 'jpg', 'jpeg', 'png', 'gif', 'ico', 'svg', 'woff', 'woff2', 'ttf', 'eot'];
-$extension = pathinfo($path, PATHINFO_EXTENSION);
+$extension = pathinfo($pathWithoutQuery, PATHINFO_EXTENSION);
 
 if (in_array(strtolower($extension), $staticExtensions)) {
-    // Tentar servir de assets/ ou public/
-    $filePath = __DIR__ . $path;
+    $filePath = null;
     
-    // Se começar com /assets/, procurar em assets/
-    if (strpos($path, '/assets/') === 0) {
-        $filePath = __DIR__ . $path;
+    // Se começar com /assets/, procurar em assets/ (raiz)
+    if (strpos($pathWithoutQuery, '/assets/') === 0) {
+        $filePath = __DIR__ . $pathWithoutQuery;
     }
     // Se começar com /public/, procurar em public/
-    elseif (strpos($path, '/public/') === 0) {
-        $filePath = __DIR__ . $path;
+    elseif (strpos($pathWithoutQuery, '/public/') === 0) {
+        $filePath = __DIR__ . $pathWithoutQuery;
     }
     // Caso contrário, tentar assets/ primeiro, depois public/
     else {
-        $filePath = __DIR__ . '/assets' . $path;
-        if (!file_exists($filePath)) {
-            $filePath = __DIR__ . '/public' . $path;
+        // Tentar assets/ primeiro
+        $filePath = __DIR__ . '/assets' . $pathWithoutQuery;
+        if (!file_exists($filePath) || !is_file($filePath)) {
+            // Tentar public/
+            $filePath = __DIR__ . '/public' . $pathWithoutQuery;
         }
     }
     
-    if (file_exists($filePath) && is_file($filePath)) {
+    if ($filePath && file_exists($filePath) && is_file($filePath)) {
         $mimeTypes = [
-            'css' => 'text/css',
-            'js' => 'application/javascript',
+            'css' => 'text/css; charset=utf-8',
+            'js' => 'application/javascript; charset=utf-8',
             'jpg' => 'image/jpeg',
             'jpeg' => 'image/jpeg',
             'png' => 'image/png',
@@ -50,7 +54,12 @@ if (in_array(strtolower($extension), $staticExtensions)) {
         ];
         
         $mimeType = isset($mimeTypes[strtolower($extension)]) ? $mimeTypes[strtolower($extension)] : 'application/octet-stream';
+        
+        // Headers para cache (opcional, mas útil)
         header('Content-Type: ' . $mimeType);
+        header('Content-Length: ' . filesize($filePath));
+        
+        // Ler e enviar arquivo
         readfile($filePath);
         exit;
     }

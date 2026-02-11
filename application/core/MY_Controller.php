@@ -16,6 +16,13 @@ class MY_Controller extends CI_Controller {
     {
         parent::__construct();
         
+        // Em desenvolvimento, desabilitar cache do navegador
+        if (ENVIRONMENT === 'development') {
+            header('Cache-Control: no-cache, no-store, must-revalidate');
+            header('Pragma: no-cache');
+            header('Expires: 0');
+        }
+        
         // Carregar configurações do sistema (se tabela existir)
         try {
             $this->load->model('Configuracao_model');

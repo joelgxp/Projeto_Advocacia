@@ -13,7 +13,7 @@
     # Redirecionar para index.php da raiz (CodeIgniter) se não for arquivo ou diretório
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^(.*)$ index.php/$1 [L]
+    RewriteRule ^(.*)$ index.php?/$1 [L,QSA]
 </IfModule>
 
 # Proteger arquivos sensíveis
